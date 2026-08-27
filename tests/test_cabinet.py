@@ -551,13 +551,48 @@ def _chose(art: str, cols: int, rows: int) -> bool:
     return got == [line.rstrip() for line in banner.lines(art)]
 
 
+def _budget(height: int) -> int:
+    """The rows the scene leaves the banner at this window height."""
+    return height - (theme.HEADER_ROWS + theme.CARD_H + theme.FOOTER_ROWS + 2)
+
+
 def test_the_banner_stands_down_before_the_cabinets_do():
-    """Widest art that fits, and one line rather than none when it is tight."""
-    assert _chose(banner.WELCOME, 80, 8)
-    assert _chose(banner.WORDMARK, 60, 8)
-    assert _chose(banner.PLAIN, 40, 8)
+    """Best art that fits, in order, down to one line rather than none."""
+    assert _chose(banner.FULL, 128, _budget(40))
+    assert _chose(banner.STACK, 78, _budget(32))
+    assert _chose(banner.CHUNKY, 78, _budget(24))
+    assert _chose(banner.ARCADE, 70, _budget(24))
+    assert _chose(banner.WORDMARK, 58, _budget(22))
+    assert _chose(banner.PLAIN, 38, _budget(18))
     assert banner.best_fit(20, 8) == []
-    assert _chose(banner.PLAIN, 80, 1), "one row should still get art"
+
+
+def test_a_standard_terminal_gets_a_wordmark():
+    """80x24 is the case that matters, and it should say what the program is
+    called rather than settling for spaced capitals."""
+    got = banner.best_fit(78, _budget(24))
+    assert got, "a standard terminal should get a banner"
+    assert banner.size("\n".join(got))[1] >= 4, "not just a single line"
+
+
+def test_the_banner_never_takes_room_the_cards_need():
+    """The invariant the ladder exists for: whatever is chosen, one row of
+    cards and the chrome still fit underneath it."""
+    for width, height in ((80, 24), (80, 32), (128, 40), (70, 24), (58, 22),
+                          (theme.MIN_COLS, theme.MIN_ROWS)):
+        art = banner.best_fit(width - 2, _budget(height))
+        used = len(art) + theme.HEADER_ROWS + theme.CARD_H + theme.FOOTER_ROWS + 2
+        assert used <= height, f"banner crowds out the cards at {width}x{height}"
+
+
+def test_whatever_is_chosen_actually_fits_the_window():
+    """FULL is 119 columns on purpose - wider than a terminal, and harmless
+    because art is measured rather than trusted. This is what makes that safe."""
+    assert banner.size(banner.FULL)[0] > 80
+    for width, height in ((80, 24), (80, 32), (70, 24), (58, 22), (40, 18)):
+        art = banner.best_fit(width - 2, _budget(height))
+        for line in art:
+            assert len(line) <= width - 2
 
 
 def test_the_banner_comes_back_padded_so_the_block_stays_square():
@@ -567,17 +602,21 @@ def test_the_banner_comes_back_padded_so_the_block_stays_square():
     assert len({len(line) for line in got}) == 1
 
 
-def test_every_variant_fits_a_terminal():
-    """The web page's own MAGMACRUNCH wordmark is 119 columns. Nothing that
-    wide belongs in this ladder."""
-    for art in banner.VARIANTS:
-        width, _ = banner.size(art)
-        assert width <= 80, f"{width} columns is wider than a terminal"
+def test_stacked_art_is_composed_from_the_pieces_not_copied():
+    """STACK and HERO are built by over(), so they cannot drift from the art
+    they are made of."""
+    for line in banner.lines(banner.CHUNKY):
+        assert line.strip() in banner.STACK
+    for line in banner.lines(banner.ARCADE):
+        assert line.strip() in banner.STACK
+        assert line.strip() in banner.HERO
 
 
-def test_the_widest_variant_still_leaves_room_for_a_card():
-    width, height = banner.size(banner.VARIANTS[0])
-    assert height + theme.HEADER_ROWS + theme.CARD_H + theme.FOOTER_ROWS + 2 <= 24
+def test_over_centres_each_block_rather_than_each_line():
+    wide = "####\n#"
+    narrow = "##"
+    stacked = banner.lines(banner.over(wide, narrow))
+    assert stacked == ["####", "#   ", "    ", " ## "]
 
 
 # ── The arcade's own colours ────────────────────────────────────────

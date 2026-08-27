@@ -9,10 +9,11 @@ magmacrunch
 ```
 
 ```
-          |                            |             |    |
-. . .,---.|    ,---.,---.,-.-.,---.    |--- ,---.    |--- |---.,---.
-| | ||---'|    |    |   || | ||---'    |    |   |    |    |   ||---'
-`-'-'`---'`---'`---'`---'` ' '`---'    `---'`---'    `---'`   '`---'
+                                                             __
+ .--------.---.-.-----.--------.---.-.----.----.--.--.-----.----.|  |--.
+ |        |  _  |  _  |        |  _  |  __|   _|  |  |     |  __||     |
+ |__|__|__|___._|___  |__|__|__|___._|____|__| |_____|__|__|____||__|__|
+                |_____|
                    EVERY CABINET ON THIS MACHINE
                             INSERT COIN
 
@@ -38,9 +39,22 @@ choose its font. Pixel lettering has to be *drawn*, out of block glyphs, which
 is what the narrow title variant does — and what the web page's own title art
 does too, in Courier Prime rather than Press Start 2P, for the same reason.
 
-The title art stands down as the window narrows, before the cabinets have to:
-the wide art at 69 columns, a block-glyph wordmark at 48, spaced capitals at
-35. That is what keeps the floor as low as it is.
+The title art stands down as the window grows or shrinks, and always before
+the cabinets have to — which is what keeps the floor as low as it is:
+
+| window | banner |
+|---|---|
+| 121×34 and up | the full site wordmark, MAGMACRUNCH over ARCADE, 119×19 |
+| ~73×30 | the same two words in 71 columns instead of 119 |
+| **80×24** | **MAGMACRUNCH alone, 71×5** |
+| ~62–72 cols | the ARCADE wordmark alone, 60×8 |
+| ~50 cols | a block-glyph MAGMACRUNCH, 48×2 |
+| 36 cols | spaced capitals |
+
+Art is measured rather than declared, so the 119-column piece can sit at the
+top of the list without ever bothering someone on an ordinary terminal — it
+is simply never the one that fits. Adding your own is one entry in `VARIANTS`
+in [`banner.py`](magmacrunch/banner.py) and nothing else.
 
 Choosing a cabinet starts it on the terminal the arcade is already holding.
 Leaving the game brings you back here. Every game is also its own command

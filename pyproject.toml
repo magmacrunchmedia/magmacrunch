@@ -53,3 +53,9 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+# banner.py is mostly ASCII art, and the widest piece is 119 columns because
+# that is how wide it is on magmacrunch.com. Rewrapping art is not a thing you
+# can do, and the line limit has nothing to say about it.
+"magmacrunch/banner.py" = ["E501"]
