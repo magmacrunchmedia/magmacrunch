@@ -9,27 +9,29 @@ magmacrunch
 ```
 
 ```
-                                                             __
- .--------.---.-.-----.--------.---.-.----.----.--.--.-----.----.|  |--.
- |        |  _  |  _  |        |  _  |  __|   _|  |  |     |  __||     |
- |__|__|__|___._|___  |__|__|__|___._|____|__| |_____|__|__|____||__|__|
-                |_____|
-                   EVERY CABINET ON THIS MACHINE
-                            INSERT COIN
+                                                                     __
+    .--------.---.-.-----.--------.---.-.----.----.--.--.-----.----.|  |--.
+    |        |  _  |  _  |        |  _  |  __|   _|  |  |     |  __||     |
+    |__|__|__|___._|___  |__|__|__|___._|____|__| |_____|__|__|____||__|__|
+                   |_____|
+                         EVERY CABINET ON THIS MACHINE
+                                  INSERT COIN
 
 
-┌──────────────────────────────┐  ┌──────────────────────────────┐
-│ George Boole Has Entered The │  │ Texas Hold'Em Lava Dome      │
-│ Chat                         │  │                              │
-│                              │  │ Solo hold'em against a       │
-│ 2048 played with logic gates │  │ threshold that climbs every  │
-│ — merge, invert, overflow.   │  │ round.                       │
-│                              │  │                              │
-│ ▶ ENTER_                     │  │ ▶ ENTER                      │
-└──────────────────────────────┘  └──────────────────────────────┘
+      ┌──────────────────────────────┐  ┌──────────────────────────────┐
+      │ George Boole Has Entered The │  │ Moonlight Drift              │
+      │ Chat                         │  │                              │
+      │                              │  │ Thread the columns. Hold to  │
+      │ 2048 played with logic gates │  │ climb, release to fall.      │
+      │ — merge, invert, overflow.   │  │                              │
+      │                              │  │                              │
+      │ ▶ ENTER_                     │  │ ▶ ENTER                      │
+      └──────────────────────────────┘  └──────────────────────────────┘
+                                   PAGE 1/2
 
-                ↑↓←→ CHOOSE    ENTER PLAY    Q QUIT
-           © 2026 magmacrunch media  ·  magmacrunch.com
+
+                      ↑↓←→ CHOOSE    ENTER PLAY    Q QUIT
+                 © 2026 magmacrunch media  ·  magmacrunch.com
 ```
 
 It is `magmacrunch.com/arcade` in a shell — the same palette, the same card
