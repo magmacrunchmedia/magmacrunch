@@ -59,7 +59,7 @@ in [`banner.py`](magmacrunch/banner.py) and nothing else.
 
 Choosing a cabinet starts it on the terminal the arcade is already holding.
 Leaving the game brings you back here. Every game is also its own command
-(`george-boole`, `lava-dome`) and plays identically either way — the arcade is
+(`george-boole`, `lava-dome`, `moonlight-drift`) and plays identically either way — the arcade is
 not a wrapper around them, it is the same host they run on.
 
 ## What is installed
@@ -97,8 +97,9 @@ above are worked examples of it.
 |---|---|
 | `magmacrunch-george-boole` | 2048 played with logic gates |
 | `magmacrunch-thld` | Solo hold'em against a climbing threshold |
+| `magmacrunch-moonlight-drift` | Thread the columns; hold to climb |
 
-Installing `magmacrunch` installs both.
+Installing `magmacrunch` installs all three.
 
 ## Requires
 

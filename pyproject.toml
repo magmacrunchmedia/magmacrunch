@@ -27,6 +27,7 @@ dependencies = [
     "texastoast[tui]>=0.10.0",
     "magmacrunch-george-boole>=0.1.0",
     "magmacrunch-thld>=0.1.0",
+    "magmacrunch-moonlight-drift>=0.1.0",
 ]
 
 [project.optional-dependencies]
