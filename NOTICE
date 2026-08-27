@@ -1,0 +1,33 @@
+magmacrunch — the terminal arcade
+Copyright 2026 magmacrunch media
+
+
+THE LICENCE
+
+Everything in this repository -- the launcher, the tests, the build files and
+the documentation -- is licensed under the PolyForm Noncommercial License
+1.0.0, in the LICENSE file beside this one.
+
+Read it, learn from it, build on it, play with it. Any noncommercial purpose is
+permitted, and that includes personal projects, teaching and research. What is
+not permitted is commercial use: selling it or a derivative of it, shipping it
+inside a product, or running it as part of a business.
+
+It is Noncommercial because the games it seats are. This package contains no
+game code -- it finds installed games by entry point and never imports one --
+but it depends on them, and a package cannot be more permissive than what it
+depends on.
+
+
+WHAT THIS DEPENDS ON
+
+texastoast, the engine, with its terminal backend. Apache License 2.0,
+copyright 2026 magmacrunch media. https://pypi.org/project/texastoast/
+
+texastoast's terminal backend depends in turn on Textual, and through it on
+Rich (MIT, copyright Will McGugan). Both carry their own licences in the
+installed distributions.
+
+The cabinets -- magmacrunch-george-boole, magmacrunch-thld -- are each
+PolyForm Noncommercial 1.0.0, copyright 2026 magmacrunch media, and carry
+their own NOTICE files.

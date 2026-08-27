@@ -1,0 +1,10 @@
+# No eol pin for the tree at large: both this repo and its siblings normalise
+# to LF in the index, so what is committed is LF whatever a clone's
+# core.autocrlf does on disk.
+#
+# Pinned below are the files CRLF breaks outright on Linux rather than merely
+# making untidy: a trailing \r on a shebang gives "bad interpreter", and a
+# workflow's `run:` block is handed to a Linux shell verbatim.
+*.sh        text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
