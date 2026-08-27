@@ -244,10 +244,31 @@ class CabinetScene:
 
     def _render_footer(self, r, cx: int) -> None:
         if self.app.error:
-            r.ui_text(cx, r.height - 3, _fit(self.app.error, r.width - 2),
+            r.ui_text(cx, r.height - 4, _fit(self.app.error, r.width - 2),
                       fill=theme.ERROR, anchor="n")
-        r.ui_text(cx, r.height - 2, _fit(MENU_HELP, r.width - 2),
+        r.ui_text(cx, r.height - 3, _fit(MENU_HELP, r.width - 2),
                   fill=theme.MUTED, anchor="n")
+        self._render_credits(r, cx)
+
+    def _render_credits(self, r, cx: int) -> None:
+        """The signature, with the domain in the colour the web page links in.
+
+        Drawn as two runs at computed positions rather than one centred
+        string, because ``.credits-row a`` is cyan against muted text and a
+        single ``ui_text`` gets one colour. Falls back to the copyright alone
+        when the window is too narrow to carry both.
+        """
+        y = r.height - 2
+        full = theme.COPYRIGHT + theme.CREDITS_SEP + theme.DOMAIN
+        if len(full) + 2 > r.width:
+            r.ui_text(cx, y, _fit(theme.COPYRIGHT, r.width - 2),
+                      fill=theme.CARD_BORDER, anchor="n")
+            return
+        x = cx - len(full) // 2
+        r.ui_text(x, y, theme.COPYRIGHT + theme.CREDITS_SEP,
+                  fill=theme.CARD_BORDER)
+        r.ui_text(x + len(theme.COPYRIGHT) + len(theme.CREDITS_SEP), y,
+                  theme.DOMAIN, fill=theme.CYAN)
 
     def _render_empty_floor(self, r, cx: int, top: int) -> None:
         for i, line in enumerate(EMPTY_FLOOR):

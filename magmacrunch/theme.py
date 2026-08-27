@@ -72,8 +72,14 @@ CARD_INNER = CARD_W - 2 * (1 + CARD_PAD)
 MARGIN_X = 2
 #: Rows above the grid that are not the banner: the tagline and INSERT COIN.
 HEADER_ROWS = 2
-#: Rows below it: the error line and the key help.
-FOOTER_ROWS = 2
+#: Rows below it: the error line, the key help and the credits.
+FOOTER_ROWS = 3
+
+#: The footer signature, in two parts so the domain can carry the link colour
+#: the web page gives it (``.credits-row a { color: #00f0ff }``).
+COPYRIGHT = "© 2026 magmacrunch media"
+DOMAIN = "magmacrunch.com"
+CREDITS_SEP = "  ·  "
 
 PLAY = "▶ ENTER"
 #: ``.card-arrow { animation: blink 0.6s step-end infinite }`` - the cursor

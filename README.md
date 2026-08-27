@@ -29,6 +29,7 @@ magmacrunch
 └──────────────────────────────┘  └──────────────────────────────┘
 
                 ↑↓←→ CHOOSE    ENTER PLAY    Q QUIT
+           © 2026 magmacrunch media  ·  magmacrunch.com
 ```
 
 It is `magmacrunch.com/arcade` in a shell — the same palette, the same card
@@ -101,7 +102,7 @@ Installing `magmacrunch` installs both.
 
 ## Requires
 
-Python 3.10+, and a terminal at least 36×16. Individual cabinets ask for more
+Python 3.10+, and a terminal at least 36×17. Individual cabinets ask for more
 (around 59×22); below that their card greys out, says the size it wants, and
 cannot be started. The arcade's own floor is deliberately lower than any
 game's, so getting to the floor is never the thing that fails.

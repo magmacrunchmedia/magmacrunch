@@ -619,6 +619,73 @@ def test_over_centres_each_block_rather_than_each_line():
     assert stacked == ["####", "#   ", "    ", " ## "]
 
 
+# ── The credits ─────────────────────────────────────────────────────
+
+
+def test_the_floor_is_signed():
+    app = two_cabinets()
+
+    async def go():
+        async with await _piloted(app) as pilot:
+            await pilot.pause()
+            await asyncio.sleep(0.25)
+            text = buffer_text(app)
+            assert theme.COPYRIGHT in text
+            assert theme.DOMAIN in text
+            app.host.quit()
+
+    run(go())
+
+
+def test_the_domain_wears_the_link_colour():
+    """.credits-row a { color: #00f0ff } - the domain is the one part of the
+    signature the web page treats as a link."""
+    app = two_cabinets()
+
+    async def go():
+        async with await _piloted(app) as pilot:
+            await pilot.pause()
+            await asyncio.sleep(0.25)
+            buf = app.host.game.surface.buffer
+            y = buf.height - 2
+            used = {buf.get(x, y).fg for x in range(buf.width)
+                    if buf.get(x, y).char.strip()}
+            assert used == {theme.CARD_BORDER, theme.CYAN}
+            app.host.quit()
+
+    run(go())
+
+
+def test_a_narrow_window_keeps_the_copyright_and_drops_the_domain():
+    """Both on one line needs 41 columns; the floor goes down to 36."""
+    app = two_cabinets()
+
+    async def go():
+        async with await _piloted(app, size=(theme.MIN_COLS, 20)) as pilot:
+            await pilot.pause()
+            await asyncio.sleep(0.25)
+            text = buffer_text(app)
+            assert theme.COPYRIGHT in text
+            assert theme.DOMAIN not in text
+            app.host.quit()
+
+    run(go())
+
+
+def test_an_empty_floor_is_signed_too():
+    """The footer is chrome, not something the cards carry."""
+    app = arcade()
+
+    async def go():
+        async with await _piloted(app) as pilot:
+            await pilot.pause()
+            await asyncio.sleep(0.25)
+            assert theme.COPYRIGHT in buffer_text(app)
+            app.host.quit()
+
+    run(go())
+
+
 # ── The arcade's own colours ────────────────────────────────────────
 
 
