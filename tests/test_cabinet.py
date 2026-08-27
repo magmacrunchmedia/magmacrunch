@@ -813,9 +813,14 @@ def test_a_blurb_full_of_glyphs_does_not_kill_the_listing(tmp_path):
         "_print([G()])\n",
         encoding="utf-8",
     )
+    # The child is told to write cp1252, so the parent has to read cp1252.
+    # Decoding its bytes as UTF-8 blows up on the em-dash (0x97) — which is a
+    # failure of this test, not of the thing it is testing, and one that hides
+    # on a Windows box whose own default happens to be cp1252.
     out = subprocess.run(
         [sys.executable, str(script)],
         capture_output=True, text=True,
+        encoding="cp1252", errors="replace",
         env={"PYTHONIOENCODING": "cp1252:strict", "PATH": ""},
     )
     assert out.returncode == 0, out.stderr
