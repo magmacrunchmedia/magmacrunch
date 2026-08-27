@@ -1,0 +1,40 @@
+# The launcher's suite, run against fake cabinets on a GitHub-hosted runner.
+#
+# Deliberately installed WITHOUT the games it depends on. `ArcadeGame` is a
+# structural protocol, so the tests satisfy it with fakes — and a suite that
+# only passed when two unrelated packages happened to be installed would be a
+# worse suite. Running with nothing installed also exercises the empty-floor
+# case for free, and is what proves the launcher imports no game.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # Lets CI be run against a branch without opening a pull request first.
+  workflow_dispatch:
+
+jobs:
+  tests:
+    name: tests (no cabinets)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # --no-deps because pyproject lists the cabinets, and installing them
+      # would defeat the point of the job.
+      - name: Install the launcher, without its cabinets
+        run: |
+          pip install "texastoast[tui]>=0.10.0" pytest ruff
+          pip install --no-deps -e .
+
+      - run: python -m pytest -q
+      - run: ruff check .
+
+      - name: An empty arcade still runs
+        run: magmacrunch --list
