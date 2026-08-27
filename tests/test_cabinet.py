@@ -19,9 +19,9 @@ pytest.importorskip("textual", reason='needs: pip install -e ".[dev]" with texas
 from texastoast.arcade import ArcadeGame, GameInfo  # noqa: E402
 from texastoast.core.tui_host import TuiHost  # noqa: E402
 
-from magmacrunch import theme  # noqa: E402
+from magmacrunch import banner, cards, theme  # noqa: E402
 from magmacrunch.app import ARCADE_INFO, ArcadeApp  # noqa: E402
-from magmacrunch.scenes import CabinetScene, min_rows_for  # noqa: E402
+from magmacrunch.scenes import CabinetScene  # noqa: E402
 
 # ── Fakes ───────────────────────────────────────────────────────────
 
@@ -96,6 +96,13 @@ def buffer_text(app: ArcadeApp) -> str:
     return app.host.game.surface.buffer.to_text()
 
 
+def colours(app: ArcadeApp) -> set:
+    buf = app.host.game.surface.buffer
+    return {buf.get(x, y).fg
+            for y in range(buf.height) for x in range(buf.width)
+            if buf.get(x, y).fg}
+
+
 async def _piloted(app: ArcadeApp, size=(80, 24)):
     from texastoast.core.tui_game import _GameApp
 
@@ -108,55 +115,73 @@ def run(coro):
     return asyncio.run(coro)
 
 
-# ── The list ────────────────────────────────────────────────────────
+# ── The grid ────────────────────────────────────────────────────────
 
 
-def test_the_menu_is_the_bottom_of_the_stack():
+def test_the_floor_is_the_bottom_of_the_stack():
     app = two_cabinets()
     assert isinstance(app.host.scene, CabinetScene)
     assert app.in_menu
 
 
-def test_one_row_per_discovered_cabinet():
+def test_one_card_per_discovered_cabinet():
     app = two_cabinets()
-    assert app.host.scene.menu.selected_index == 0
 
     async def go():
         async with await _piloted(app) as pilot:
             await pilot.pause()
             await asyncio.sleep(0.25)
             text = buffer_text(app)
-            assert theme.BANNER in text
-            assert "CHOOSE A CABINET" in text
             assert "Alpha Cabinet" in text
             assert "Beta Cabinet" in text
+            # Both blurbs, which a one-line-per-game list had no room for.
+            assert "The first one." in text
+            assert "The second one." in text
+            # Two card borders.
+            assert text.count(cards.TL) == 2
             app.host.quit()
 
     run(go())
 
 
 def test_the_order_discovery_gave_is_the_order_shown():
-    """discover() sorts by title; the menu must not re-sort or reverse it."""
+    """discover() sorts by title; the floor must not re-sort or reverse it."""
     app = two_cabinets()
     scene = app.host.scene
-    assert scene._highlighted.info.key == "alpha"
-    scene.handle_key("down")
-    assert scene._highlighted.info.key == "beta"
+    assert scene.highlighted.info.key == "alpha"
+    scene.handle_key("right")
+    assert scene.highlighted.info.key == "beta"
 
 
-def test_the_blurb_of_the_highlighted_cabinet_is_shown():
-    """GameInfo.blurb is otherwise unused, and a row of bare titles says
-    nothing about what a cabinet is."""
+def test_left_and_right_step_one_card():
     app = two_cabinets()
+    scene = app.host.scene
+    scene.handle_key("right")
+    assert scene.selected == 1
+    scene.handle_key("left")
+    assert scene.selected == 0
+
+
+def test_the_selection_wraps():
+    app = two_cabinets()
+    scene = app.host.scene
+    scene.handle_key("left")
+    assert scene.selected == 1
+
+
+def test_up_and_down_move_a_whole_row_not_one_card():
+    """A grid where down moves one card is a list wearing a grid's clothes."""
+    app = arcade(*[FakeGame(key=f"g{i}", title=f"Cabinet {i}") for i in range(4)])
 
     async def go():
         async with await _piloted(app) as pilot:
             await pilot.pause()
             await asyncio.sleep(0.25)
-            assert "The first one." in buffer_text(app)
+            scene = app.host.scene
+            assert cards.columns(80) == 2
             await pilot.press("down")
-            await asyncio.sleep(0.25)
-            assert "The second one." in buffer_text(app)
+            await asyncio.sleep(0.15)
+            assert scene.selected == 2
             app.host.quit()
 
     run(go())
@@ -165,28 +190,28 @@ def test_the_blurb_of_the_highlighted_cabinet_is_shown():
 # ── Seating ─────────────────────────────────────────────────────────
 
 
-def test_choosing_a_cabinet_seats_it_over_the_menu():
+def test_choosing_a_cabinet_seats_it_over_the_floor():
     app = two_cabinets()
     app.host.scene.handle_key("enter")
     settle(app)
     assert not app.in_menu
     assert isinstance(app.host.scene, FakeScene)
     assert app.host.scene.label == "alpha"
-    # The menu is still underneath, which is what leaving lands on.
+    # The floor is still underneath, which is what leaving lands on.
     assert len(app.host.stack) == 2
     assert isinstance(app.host.stack.scenes[0], CabinetScene)
 
 
-def test_the_cabinet_that_was_highlighted_is_the_one_that_starts():
+def test_the_card_that_was_selected_is_the_one_that_starts():
     app = two_cabinets()
     scene = app.host.scene
-    scene.handle_key("down")
+    scene.handle_key("right")
     scene.handle_key("enter")
     settle(app)
     assert app.host.scene.label == "beta"
 
 
-def test_leaving_a_cabinet_returns_to_the_menu():
+def test_leaving_a_cabinet_returns_to_the_floor():
     app = two_cabinets()
     app.host.scene.handle_key("enter")
     settle(app)
@@ -196,21 +221,6 @@ def test_leaving_a_cabinet_returns_to_the_menu():
     settle(app)
     assert app.in_menu
     assert len(app.host.stack) == 1
-
-
-def test_the_menu_is_usable_again_after_a_cabinet_is_popped():
-    """Menu.confirm() hides the menu as it fires, so without on_resume the
-    screen underneath comes back empty."""
-    app = two_cabinets()
-    app.host.scene.handle_key("enter")
-    settle(app)
-    app.host.pop_scene()
-    settle(app)
-
-    assert app.host.scene.menu.active
-    app.host.scene.handle_key("enter")
-    settle(app)
-    assert not app.in_menu
 
 
 def test_playing_a_cabinet_twice_is_two_runs():
@@ -226,27 +236,27 @@ def test_playing_a_cabinet_twice_is_two_runs():
     assert alpha.starts == 2
 
 
-def test_the_row_the_player_left_from_is_still_highlighted():
+def test_the_card_the_player_left_from_is_still_selected():
     app = two_cabinets()
     scene = app.host.scene
-    scene.handle_key("down")
+    scene.handle_key("right")
     scene.handle_key("enter")
     settle(app)
     app.host.pop_scene()
     settle(app)
-    assert scene.menu.selected_index == 1
+    assert scene.selected == 1
 
 
 # ── Retuning ────────────────────────────────────────────────────────
 
 
-def test_the_menu_takes_its_held_key_decay_back_when_a_cabinet_leaves():
+def test_the_floor_takes_its_held_key_decay_back_when_a_cabinet_leaves():
     """The half of the retune that bites.
 
     ``TuiHost.seat()`` applies a game's ``hold_ms`` and nothing puts it back.
-    Left alone, returning from a real-time cabinet would leave the menu
-    inferring held keys from auto-repeat, and one arrow press would slide the
-    selection down the list instead of stepping one row.
+    Left alone, returning from a real-time cabinet would leave the floor
+    inferring held keys from auto-repeat, and one arrow press would skate the
+    cursor across the grid instead of stepping one card.
 
     Headless because ``apply`` sets the input source whether or not a loop is
     running. The frame-rate half needs a live loop and is piloted below.
@@ -261,7 +271,7 @@ def test_the_menu_takes_its_held_key_decay_back_when_a_cabinet_leaves():
     assert app.host.game.input.hold_ms == ARCADE_INFO.hold_ms
 
 
-def test_the_menu_takes_its_frame_rate_back_when_a_cabinet_leaves():
+def test_the_floor_takes_its_frame_rate_back_when_a_cabinet_leaves():
     """The same for fps, which only exists once the loop is running."""
     app = arcade(FakeGame(key="fast", fps=30, hold_ms=120))
 
@@ -291,35 +301,32 @@ def test_a_cabinet_too_big_for_the_window_cannot_be_chosen():
     app = arcade(FakeGame(key="alpha", title="Alpha Cabinet"), huge)
     scene = app.host.scene
 
-    scene.update(0.0)
-    assert scene.menu._items[1]["enabled"] is False
-
-    # Selecting it and confirming must seat nothing, not seat it anyway.
-    scene.menu._selected = 1
+    scene.selected = 1
+    assert scene._enabled(huge) is False
     scene.handle_key("enter")
     settle(app)
     assert app.in_menu
     assert huge.starts == 0
 
 
-def test_a_cabinet_that_fits_again_comes_back():
-    """Fit is re-asked every frame, so growing the window re-enables the row
-    without the menu being rebuilt."""
+def test_a_cabinet_that_fits_again_can_be_chosen():
+    """Fit is asked at the moment it is needed, so growing the window takes
+    effect in the same frame rather than after a rebuild."""
     game = FakeGame(key="alpha", min_cols=500, min_rows=500)
     app = arcade(game)
     scene = app.host.scene
+    assert scene._enabled(game) is False
 
-    scene.update(0.0)
-    assert scene.menu._items[0]["enabled"] is False
+    game.info = GameInfo(key="alpha", title="Alpha", blurb="x",
+                         min_cols=1, min_rows=1)
+    assert scene._enabled(game) is True
+    scene.handle_key("enter")
+    settle(app)
+    assert game.starts == 1
 
-    object.__setattr__(game, "info", GameInfo(key="alpha", title="Alpha",
-                                              blurb="x", min_cols=1, min_rows=1))
-    scene.update(0.0)
-    assert scene.menu._items[0]["enabled"] is True
 
-
-def test_a_greyed_row_says_what_it_wants():
-    """A disabled row with no explanation is a bug report waiting to happen."""
+def test_a_card_that_does_not_fit_says_what_it_wants():
+    """A greyed card with no explanation is a bug report waiting to happen."""
     app = arcade(FakeGame(key="huge", title="Huge Cabinet",
                           min_cols=500, min_rows=500))
 
@@ -329,6 +336,7 @@ def test_a_greyed_row_says_what_it_wants():
             await asyncio.sleep(0.25)
             text = buffer_text(app)
             assert "500x500" in text
+            assert "TOO BIG" in text
             app.host.quit()
 
     run(go())
@@ -338,7 +346,7 @@ def test_a_greyed_row_says_what_it_wants():
 
 
 def test_a_cabinet_that_will_not_start_does_not_end_the_session():
-    """discover() already refuses to let one broken game take down the menu.
+    """discover() already refuses to let one broken game take down the floor.
     start() is the later moment the same thing can happen, with the terminal
     live."""
     broken = BrokenGame(key="broken", title="Broken Cabinet")
@@ -352,16 +360,13 @@ def test_a_cabinet_that_will_not_start_does_not_end_the_session():
     assert "no such font" in app.error
 
 
-def test_the_menu_is_still_armed_after_a_cabinet_fails_to_start():
-    """Nothing was pushed, so nothing pops and no on_resume fires. Without a
-    re-arm the floor is left blank under the error."""
+def test_the_floor_still_works_after_a_cabinet_fails_to_start():
     app = arcade(BrokenGame(key="broken"), FakeGame(key="fine"))
     scene = app.host.scene
     scene.handle_key("enter")
     settle(app)
-    assert scene.menu.active
 
-    scene.handle_key("down")
+    scene.handle_key("right")
     scene.handle_key("enter")
     settle(app)
     assert not app.in_menu
@@ -388,7 +393,7 @@ def test_a_later_success_clears_the_error():
     settle(app)
     assert app.error
 
-    scene.handle_key("down")
+    scene.handle_key("right")
     scene.handle_key("enter")
     settle(app)
     assert app.error == ""
@@ -398,8 +403,6 @@ def test_a_later_success_clears_the_error():
 
 
 def test_an_empty_arcade_says_so_rather_than_drawing_nothing():
-    """Menu.show([]) returns early and leaves the menu inactive, so without
-    this the screen is blank."""
     app = arcade()
 
     async def go():
@@ -407,8 +410,9 @@ def test_an_empty_arcade_says_so_rather_than_drawing_nothing():
             await pilot.pause()
             await asyncio.sleep(0.25)
             text = buffer_text(app)
-            assert "No cabinets installed" in text
+            assert "NO CABINETS INSTALLED" in text
             assert "pip install magmacrunch-george-boole" in text
+            assert cards.TL not in text
             app.host.quit()
 
     run(go())
@@ -417,7 +421,8 @@ def test_an_empty_arcade_says_so_rather_than_drawing_nothing():
 def test_an_empty_arcade_still_takes_keys():
     app = arcade()
     scene = app.host.scene
-    assert scene.handle_key("down") is True   # moves nothing, but is not a crash
+    assert scene.handle_key("right") is True   # moves nothing, but is not a crash
+    assert scene.highlighted is None
     scene.update(0.0)
     assert app.in_menu
 
@@ -453,18 +458,72 @@ def test_an_unknown_key_is_not_swallowed():
     assert app.host.scene.handle_key("z") is False
 
 
+# ── Layout ──────────────────────────────────────────────────────────
+
+
+def test_two_columns_when_there_is_room_and_one_when_there_is_not():
+    assert cards.columns(80) == 2
+    assert cards.columns(theme.MIN_COLS) == 1
+
+
+def test_the_grid_never_goes_wider_than_two():
+    """.game-grid is repeat(2, 1fr) until 1100px, and a terminal is never the
+    wide case."""
+    assert cards.columns(500) == theme.MAX_COLS
+
+
+def test_cards_are_laid_out_left_to_right_then_down():
+    slots = cards.layout(4, 0, 80, 40)
+    assert [(s.index, s.x > slots[0].x, s.y > slots[0].y) for s in slots] == [
+        (0, False, False), (1, True, False), (2, False, True), (3, True, True),
+    ]
+
+
+def test_the_grid_is_centred_in_the_window():
+    slots = cards.layout(2, 0, 80, 40)
+    left = slots[0].x
+    right = slots[1].x + theme.CARD_W
+    assert left == 80 - right, "grid is not centred"
+
+
+def test_cabinets_past_the_first_page_are_not_drawn_over_the_chrome():
+    """Six cabinets in a window with room for two: the four that do not fit
+    are simply not placed, rather than running off the bottom."""
+    slots = cards.layout(6, 0, 80, theme.CARD_H)
+    assert len(slots) == 2
+    assert cards.pages(6, 80, theme.CARD_H) == 3
+
+
+def test_the_page_follows_the_selection():
+    assert cards.page_start(0, 2) == 0
+    assert cards.page_start(1, 2) == 0
+    assert cards.page_start(2, 2) == 2
+    assert cards.page_start(5, 2) == 4
+
+
+def test_a_page_indicator_appears_only_when_there_is_more_than_one_page():
+    many = [FakeGame(key=f"g{i}", title=f"Cabinet {i}") for i in range(8)]
+
+    async def go(games, expected):
+        app = arcade(*games)
+        async with await _piloted(app, size=(80, 24)) as pilot:
+            await pilot.pause()
+            await asyncio.sleep(0.25)
+            assert ("PAGE" in buffer_text(app)) is expected
+            app.host.quit()
+
+    run(go(many, True))
+    run(go(many[:2], False))
+
+
 # ── The floor is lower than any cabinet's ───────────────────────────
 
 
 def test_the_arcade_asks_for_less_room_than_the_games_it_seats():
     """An arcade that refuses to draw in a window where its games would run is
-    worse than useless."""
+    worse than useless. Both shipped cabinets want about 58x22."""
     assert theme.MIN_COLS < 58
-    assert min_rows_for(3) < 20
-
-
-def test_the_floor_grows_with_the_number_of_cabinets():
-    assert min_rows_for(4) - min_rows_for(1) == 3 * theme.MENU_ITEM_H
+    assert theme.MIN_ROWS < 22
 
 
 def test_a_terminal_below_the_floor_is_told_so_rather_than_drawn_in():
@@ -475,8 +534,120 @@ def test_a_terminal_below_the_floor_is_told_so_rather_than_drawn_in():
             await pilot.pause()
             await asyncio.sleep(0.25)
             text = buffer_text(app)
-            assert "too small" in text
-            assert "CHOOSE A CABINET" not in text
+            assert "TOO SMALL" in text
+            assert cards.TL not in text
+            app.host.quit()
+
+    run(go())
+
+
+# ── The banner ──────────────────────────────────────────────────────
+
+
+def _chose(art: str, cols: int, rows: int) -> bool:
+    """Whether best_fit picked ``art``. Compared right-stripped, because what
+    comes back is padded to the block's width."""
+    got = [line.rstrip() for line in banner.best_fit(cols, rows)]
+    return got == [line.rstrip() for line in banner.lines(art)]
+
+
+def test_the_banner_stands_down_before_the_cabinets_do():
+    """Widest art that fits, and one line rather than none when it is tight."""
+    assert _chose(banner.WELCOME, 80, 8)
+    assert _chose(banner.WORDMARK, 60, 8)
+    assert _chose(banner.PLAIN, 40, 8)
+    assert banner.best_fit(20, 8) == []
+    assert _chose(banner.PLAIN, 80, 1), "one row should still get art"
+
+
+def test_the_banner_comes_back_padded_so_the_block_stays_square():
+    """Centring each line by its own length raggeds the block apart - the top
+    line of WELCOME is mostly leading space."""
+    got = banner.best_fit(80, 8)
+    assert len({len(line) for line in got}) == 1
+
+
+def test_every_variant_fits_a_terminal():
+    """The web page's own MAGMACRUNCH wordmark is 119 columns. Nothing that
+    wide belongs in this ladder."""
+    for art in banner.VARIANTS:
+        width, _ = banner.size(art)
+        assert width <= 80, f"{width} columns is wider than a terminal"
+
+
+def test_the_widest_variant_still_leaves_room_for_a_card():
+    width, height = banner.size(banner.VARIANTS[0])
+    assert height + theme.HEADER_ROWS + theme.CARD_H + theme.FOOTER_ROWS + 2 <= 24
+
+
+# ── The arcade's own colours ────────────────────────────────────────
+
+
+def test_the_floor_is_painted_in_the_web_arcades_palette():
+    app = two_cabinets()
+
+    async def go():
+        async with await _piloted(app) as pilot:
+            await pilot.pause()
+            await asyncio.sleep(0.25)
+            used = colours(app)
+            assert theme.CYAN in used, "banner"
+            assert theme.PINK in used, "tagline"
+            assert theme.CARD_TITLE in used, "card titles"
+            assert theme.MUTED in used, "card blurbs"
+            app.host.quit()
+
+    run(go())
+
+
+def test_the_selected_card_wears_its_accent_and_the_others_do_not():
+    """.game-card:hover { border-color: var(--card-color) } - the border is
+    how the web page says which card the pointer is on."""
+    app = two_cabinets()
+
+    async def go():
+        async with await _piloted(app) as pilot:
+            await pilot.pause()
+            await asyncio.sleep(0.25)
+            buf = app.host.game.surface.buffer
+            corners = [(x, y) for y in range(buf.height) for x in range(buf.width)
+                       if buf.get(x, y).char == cards.TL]
+            assert len(corners) == 2
+            fills = [buf.get(x, y).fg for x, y in corners]
+            assert fills[0] == theme.accent(0)
+            assert fills[1] == theme.CARD_BORDER
+
+            await pilot.press("right")
+            await asyncio.sleep(0.25)
+            fills = [buf.get(x, y).fg for x, y in corners]
+            assert fills[0] == theme.CARD_BORDER
+            assert fills[1] == theme.accent(1)
+            app.host.quit()
+
+    run(go())
+
+
+def test_each_cabinet_gets_its_own_accent():
+    assert theme.accent(0) != theme.accent(1)
+    assert theme.accent(0) == theme.accent(len(theme.ACCENTS))
+
+
+def test_the_cursor_blinks_only_on_the_selected_card():
+    """.card-arrow is opacity 0 until :hover, and a grid where every card
+    blinks says nothing about which one Enter would start."""
+    app = two_cabinets()
+    scene = app.host.scene
+    scene.elapsed = 0.0
+    assert scene._blink(theme.BLINK_SECONDS) is True
+    scene.elapsed = theme.BLINK_SECONDS * 0.75
+    assert scene._blink(theme.BLINK_SECONDS) is False
+
+    async def go():
+        async with await _piloted(app) as pilot:
+            await pilot.pause()
+            await asyncio.sleep(0.25)
+            # However the blink lands this frame, at most one card shows it.
+            assert buffer_text(app).count(theme.PLAY + "_") <= 1
             app.host.quit()
 
     run(go())
@@ -545,7 +716,8 @@ def test_the_launcher_imports_no_game():
     import sys
 
     code = (
-        "import sys, magmacrunch, magmacrunch.app, magmacrunch.scenes, "
+        "import sys, magmacrunch, magmacrunch.app, magmacrunch.banner, "
+        "magmacrunch.cards, magmacrunch.scenes, magmacrunch.theme, "
         "magmacrunch.__main__; "
         "leaked = [m for m in ('boole', 'lavadome') if m in sys.modules]; "
         "print(leaked)"

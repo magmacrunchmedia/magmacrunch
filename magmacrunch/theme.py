@@ -1,61 +1,90 @@
-"""Palette and layout for the arcade menu, in character cells.
+"""Palette and layout for the arcade floor, in character cells.
+
+The colours are magmacrunch.com's arcade page, lifted from ``arcade.css`` so
+the terminal and the browser are recognisably the same place. What could not
+come with them is the typography: ``arcade.css`` sets ``Press Start 2P`` on
+almost everything, and **a terminal program does not choose its font** - the
+font is whatever the person running it has their emulator set to. The web page
+already runs into this itself, which is why its own title art is Courier Prime
+rather than Press Start 2P: pixel lettering in a terminal has to be drawn out
+of block glyphs, not asked for. See :mod:`magmacrunch.banner`.
 
 Split out so :mod:`magmacrunch.scenes` and :mod:`magmacrunch.app` can share it
 without importing each other. Nothing here imports the engine.
 
-Every measurement is **cells**, not pixels. The engine's widgets take their
-layout metrics as constructor arguments for exactly this reason - the numbers
-below are what a terminal wants, where the defaults are what a canvas wants.
-
-The floor is deliberately lower than any cabinet's. An arcade that refuses to
-draw in a window where its games would run is worse than useless, so the menu
-is kept narrow enough that reaching it is never the constraint.
+Every measurement is **cells**, not pixels.
 """
 
 from __future__ import annotations
 
-BANNER = "M A G M A C R U N C H   A R C A D E"
-TAGLINE = "every cabinet on this machine"
+TAGLINE = "EVERY CABINET ON THIS MACHINE"
+INSERT_COIN = "INSERT COIN"
 
-#: Menu geometry, in cells. Passed to the engine's Menu widget in place of its
-#: pixel defaults (280 wide, 32-cell rows), which would sit entirely offscreen.
-#:
-#: 44 wide takes the longest title there is ("George Boole Has Entered The
-#: Chat", 33) with room to spare. Titles alone go in the rows; a row carrying
-#: its blurb too would need about 80 columns, which is a higher floor than the
-#: games have - so the blurb goes under the box instead, for the row that is
-#: highlighted.
-MENU_W = 44
-MENU_ITEM_H = 1
-MENU_TITLE_H = 2
-MENU_PAD = 1
-MENU_BORDER = 1
+# ── Palette ─────────────────────────────────────────────────────────
+# arcade.css, near enough verbatim. The names are the web page's roles.
 
-#: Rows the box takes regardless of how many cabinets are in it: the title,
-#: the padding above and below the items, and the border on both sides.
-BOX_FIXED_ROWS = MENU_TITLE_H + 2 * MENU_PAD + 2 * MENU_BORDER
+#: ``body { background: #0a0612 }``
+BG = "#0a0612"
+#: ``.game-card { background: #150b29 }``
+CARD_BG = "#150b29"
+#: ``.game-card { border: 2px solid #3a2d5c }`` - the resting border.
+CARD_BORDER = "#3a2d5c"
+#: ``.card-title { color: #f0f8ff }``
+CARD_TITLE = "#f0f8ff"
+#: ``.card-desc`` and ``.breadcrumb`` - the muted body colour.
+MUTED = "#8a7fa8"
 
-#: Rows outside the box. The box is centred, so the taller side counts twice:
-#: banner, tagline and a blank above; blurb, error and help below, plus a
-#: margin.
-CHROME_ROWS = 8
+CYAN = "#00f0ff"      # .arcade-title-ascii, links
+PINK = "#ff2e9c"      # .arcade-subtitle, --nav-accent, the default card colour
+YELLOW = "#fff733"    # .insert-coin, the scoreboard header
+GREEN = "#39ff6e"     # card-games card
+AMBER = "#ffe03a"     # puzzles card
 
-#: Smallest terminal the menu is drawn in, with no cabinets in it. One row per
-#: cabinet is added on top - see :func:`magmacrunch.scenes.min_rows_for`.
-#: Both are derived from the metrics above so the floor cannot drift from
-#: where things are actually drawn.
-MIN_COLS = MENU_W + 2 * (MENU_BORDER + 2)
-MIN_ROWS = CHROME_ROWS + BOX_FIXED_ROWS
+ERROR = PINK
 
-BG = "#12101f"
-TITLE = "#f59e0b"
-DIM = "#4a4a6a"
-LABEL = "#6b6b8f"
-VALUE = "#e8e8f4"
-ERROR = "#ff6b6b"
-MENU_BOX = "#1b1730"
-MENU_SELECTED = "#f59e0b"
-MENU_SELECTION_BG = "#33234d"
-#: Cabinets too big for the window. The engine's Menu draws unselectable rows
-#: in this colour, which is the whole of the fit-gating presentation.
-DISABLED = "#3a3a52"
+#: One accent per cabinet, cycled by position, in the order the four category
+#: cards use them on the web page. ``.game-card:hover`` puts this on the
+#: border and ``.card-play`` puts it on the ENTER line, which is exactly what
+#: a selected card does here.
+ACCENTS = (CYAN, GREEN, AMBER, PINK)
+
+
+def accent(index: int) -> str:
+    return ACCENTS[index % len(ACCENTS)]
+
+
+# ── Cards ───────────────────────────────────────────────────────────
+
+#: A card is 32x9 with a two-cell gutter, and the grid is at most two across
+#: - ``.game-grid`` is ``repeat(2, 1fr)`` until 1100px, and a terminal is
+#: never the wide case.
+CARD_W = 32
+CARD_H = 9
+GAP_X = 2
+GAP_Y = 1
+MAX_COLS = 2
+
+#: Border on both sides plus a cell of padding inside it.
+CARD_PAD = 1
+#: What a card has left for text.
+CARD_INNER = CARD_W - 2 * (1 + CARD_PAD)
+
+MARGIN_X = 2
+#: Rows above the grid that are not the banner: the tagline and INSERT COIN.
+HEADER_ROWS = 2
+#: Rows below it: the error line and the key help.
+FOOTER_ROWS = 2
+
+PLAY = "▶ ENTER"
+#: ``.card-arrow { animation: blink 0.6s step-end infinite }`` - the cursor
+#: after ENTER on the selected card, on for one half-period and off the next.
+BLINK_SECONDS = 0.6
+#: ``.insert-coin { animation: blink 1s step-end infinite }``
+COIN_BLINK_SECONDS = 1.0
+
+#: Smallest terminal the floor is drawn in: one card, one column, plus the
+#: chrome that never goes away. Derived so the floor cannot drift from the
+#: layout. The banner is not in it - it stands down to whatever fits, and at
+#: the bottom rung it is one line. See :func:`magmacrunch.banner.best_fit`.
+MIN_COLS = CARD_W + 2 * MARGIN_X
+MIN_ROWS = 1 + HEADER_ROWS + CARD_H + FOOTER_ROWS + 2

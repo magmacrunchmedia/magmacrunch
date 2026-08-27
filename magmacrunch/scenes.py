@@ -1,27 +1,32 @@
 """The arcade floor, as a scene.
 
-One screen: a list of every cabinet that was found, and a way into one. It
-draws through the engine's ``Renderer``/``UISurface`` protocols and does not
-know what Textual is.
+One screen: the title art, a grid of every cabinet that was found, and a way
+into one. It draws through the engine's ``Renderer``/``UISurface`` protocols
+and does not know what Textual is.
+
+The layout follows magmacrunch.com's arcade page - banner, tagline, a blinking
+INSERT COIN, then the card grid - and gives up its parts in that order as the
+window shrinks, so that the cabinets are the last thing to go. See
+:mod:`magmacrunch.banner` and :mod:`magmacrunch.cards`.
 
 Modality is the stack, not a flag - the engine's own rule. This sits at the
 bottom; seating a cabinet pushes its scenes on top, and the cabinet leaving
-pops back down to here. Nothing needs an ``in_game`` boolean, and the menu
+pops back down to here. Nothing needs an ``in_game`` boolean, and the floor
 cannot be updated while a game is over it because the stack will not call it.
+
+The engine's ``Menu`` widget is deliberately not used. It draws a centred list
+of single-line rows, which is the wrong shape for a grid of bordered cards -
+so selection state lives here instead, in :attr:`CabinetScene.selected`.
 """
 
 from __future__ import annotations
 
-from dataclasses import replace
+from magmacrunch import banner, cards, theme
 
-from texastoast.ui import DEFAULT_THEME, Menu
-
-from magmacrunch import theme
-
-MENU_HELP = "up/down choose    Enter play    Q quit"
+MENU_HELP = "↑↓←→ CHOOSE    ENTER PLAY    Q QUIT"
 
 EMPTY_FLOOR = (
-    "No cabinets installed.",
+    "NO CABINETS INSTALLED",
     "",
     "pip install magmacrunch-george-boole",
     "pip install magmacrunch-thld",
@@ -31,9 +36,11 @@ EMPTY_FLOOR = (
 )
 
 
-def min_rows_for(count: int) -> int:
-    """Rows the menu needs with ``count`` cabinets in it."""
-    return theme.MIN_ROWS + count * theme.MENU_ITEM_H
+def _fit(text: str, width: int) -> str:
+    """Trim to ``width``, marking the cut so a clipped line reads as clipped."""
+    if width <= 1 or len(text) <= width:
+        return text
+    return text[:width - 1] + "…"
 
 
 def _too_small(renderer, cols: int, rows: int) -> bool:
@@ -46,24 +53,17 @@ def _too_small(renderer, cols: int, rows: int) -> bool:
     """
     if renderer.width >= cols and renderer.height >= rows:
         return False
-    renderer.ui_text(1, 1, "terminal too small", fill=theme.ERROR)
+    renderer.ui_text(1, 1, "TERMINAL TOO SMALL", fill=theme.ERROR)
     renderer.ui_text(
         1, 2,
         f"need {cols}x{rows}, have {renderer.width}x{renderer.height}",
-        fill=theme.DIM,
+        fill=theme.MUTED,
     )
     return True
 
 
-def _fit(text: str, width: int) -> str:
-    """Trim to ``width``, marking the cut so a clipped line reads as clipped."""
-    if width <= 1 or len(text) <= width:
-        return text
-    return text[:width - 1] + "…"
-
-
 class CabinetScene:
-    """The menu of installed games.
+    """The grid of installed games.
 
     ``render_below`` is deliberately *not* set: a cabinet seated on top covers
     this completely, so drawing underneath it would be wasted work.
@@ -71,51 +71,73 @@ class CabinetScene:
 
     def __init__(self, app):
         self.app = app
-        self.menu = Menu(
-            app.renderer,
-            theme=_menu_theme(),
-            # Cells, not pixels. The engine's defaults (280 wide, 32-cell rows)
-            # would put the whole widget offscreen here.
-            menu_width=theme.MENU_W,
-            item_height=theme.MENU_ITEM_H,
-            title_height=theme.MENU_TITLE_H,
-            item_padding=theme.MENU_PAD,
-            border_pad=theme.MENU_BORDER,
-            selected_color=theme.MENU_SELECTED,
-            normal_color=theme.VALUE,
-            disabled_color=theme.DISABLED,
-        )
-        self._show()
+        #: Which cabinet the cursor is on. Kept here rather than in a widget
+        #: because the grid is drawn here - see the module docstring.
+        self.selected = 0
+        #: Seconds since the scene started, for the blinking cursor and coin.
+        #: A frame clock rather than a wall clock so the blink is the engine's
+        #: business and stays put when the loop is stopped in a test.
+        self.elapsed = 0.0
 
-    # -- The list ----------------------------------------------------
-
-    def _show(self) -> None:
-        """Arm the menu, keeping whatever row was highlighted.
-
-        Called on construction and every time the menu comes back up, because
-        ``Menu.confirm()`` hides the menu as it fires the callback - without
-        this the screen underneath returns empty.
-        """
-        if not self.app.games:
-            return
-        self.menu.show(
-            [_fit(game.info.title, theme.MENU_W - 4) for game in self.app.games],
-            on_select=self._chose,
-            title="CHOOSE A CABINET",
-            selected=self.menu.selected_index,
-        )
-
-    def _chose(self, index: int, label: str) -> None:  # noqa: ARG002
-        if not self.app.play(self.app.games[index]):
-            # Nothing was pushed, so nothing will pop and no on_resume will
-            # fire. Re-arm here or the floor is left blank under the error.
-            self._show()
+    # -- The grid ----------------------------------------------------
 
     @property
-    def _highlighted(self):
+    def highlighted(self):
         if not self.app.games:
             return None
-        return self.app.games[self.menu.selected_index]
+        return self.app.games[self.selected]
+
+    def _enabled(self, game) -> bool:
+        """Whether this window is big enough to seat ``game``.
+
+        ``GameInfo.fits`` exists for exactly this. Asked at the moment it is
+        needed rather than cached, so a resize is reflected in the same frame
+        that draws it.
+        """
+        r = self.app.renderer
+        return game.info.fits(r.width, r.height)
+
+    def _grid_region(self) -> tuple[int, int]:
+        """``(width, height)`` left for cards after the chrome takes its share."""
+        r = self.app.renderer
+        used = self._banner_rows() + theme.HEADER_ROWS + theme.FOOTER_ROWS + 2
+        return r.width, max(0, r.height - used)
+
+    def _banner_rows(self) -> int:
+        r = self.app.renderer
+        return len(banner.best_fit(r.width - 2, self._banner_budget()))
+
+    def _banner_budget(self) -> int:
+        """Rows the banner may have.
+
+        It is given whatever is left once one row of cards and the chrome are
+        accounted for, so the art stands down before the cabinets do. That is
+        what keeps the floor at one card rather than at the widest banner.
+        """
+        r = self.app.renderer
+        spare = r.height - (theme.HEADER_ROWS + theme.CARD_H + theme.FOOTER_ROWS + 2)
+        return max(0, spare)
+
+    def _move(self, delta: int) -> None:
+        if not self.app.games:
+            return
+        self.selected = (self.selected + delta) % len(self.app.games)
+
+    def _move_row(self, delta: int) -> None:
+        """Up/down moves by a whole row of the grid, not by one card."""
+        if not self.app.games:
+            return
+        width, height = self._grid_region()
+        self._move(delta * cards.columns(width))
+
+    def choose(self) -> None:
+        game = self.highlighted
+        if game is None or not self._enabled(game):
+            return
+        if not self.app.play(game):
+            # Nothing was pushed, so nothing will pop and no on_resume will
+            # fire. The error is drawn on the floor instead.
+            pass
 
     # -- Stack hooks -------------------------------------------------
 
@@ -124,8 +146,8 @@ class CabinetScene:
 
         ``TuiHost.seat()`` applies the seated game's declared ``fps`` and
         ``hold_ms``, and nothing puts them back - so a real-time cabinet
-        handing control back would leave the menu running at its frame rate
-        with its held-key decay, and arrows would slide down the list on
+        handing control back would leave the floor running at its frame rate
+        with its held-key decay, and arrows would skate across the grid on
         auto-repeat instead of stepping.
 
         Retuning here rather than in the host is deliberate: the host cannot
@@ -133,32 +155,23 @@ class CabinetScene:
         is this.
         """
         self.app.host.apply(self.app.info)
-        self._show()
 
     # -- Frame -------------------------------------------------------
 
     def update(self, dt: float) -> None:
-        """Grey out the cabinets this window is too small for.
-
-        ``GameInfo.fits`` exists for exactly this, and the engine's Menu
-        already refuses to confirm a disabled row and snaps the selection off
-        one - so fit-gating needs no logic of its own beyond asking.
-
-        Per frame rather than on a resize event because Menu re-reads the
-        surface size live when it renders; asking at the same cadence is what
-        keeps the two from disagreeing for a frame after a resize.
-        """
-        r = self.app.renderer
-        for i, game in enumerate(self.app.games):
-            self.menu.set_enabled(i, game.info.fits(r.width, r.height))
+        self.elapsed += dt
 
     def handle_key(self, key: str) -> bool:
-        if key in ("up", "w", "k"):
-            self.menu.move_up()
+        if key in ("left", "a", "h"):
+            self._move(-1)
+        elif key in ("right", "d", "l"):
+            self._move(1)
+        elif key in ("up", "w", "k"):
+            self._move_row(-1)
         elif key in ("down", "s", "j"):
-            self.menu.move_down()
+            self._move_row(1)
         elif key in ("enter", "space"):
-            self.menu.confirm()
+            self.choose()
         elif key == "q":
             self.app.host.quit()
         elif key == "escape":
@@ -174,66 +187,77 @@ class CabinetScene:
         r.clear()
         r.draw_rect(0, 0, r.width, r.height, theme.BG)
 
-        if _too_small(r, theme.MIN_COLS, min_rows_for(len(self.app.games))):
+        if _too_small(r, theme.MIN_COLS, theme.MIN_ROWS):
             r.present()
             return
 
         cx = r.width // 2
-        r.ui_text(cx, 1, theme.BANNER, fill=theme.TITLE, anchor="n")
-        r.ui_text(cx, 2, theme.TAGLINE, fill=theme.DIM, anchor="n")
+        y = self._render_header(r, cx)
 
         if self.app.games:
-            self.menu.render()
-            self._render_footer(r, cx)
+            self._render_grid(r, y)
         else:
-            self._render_empty_floor(r, cx)
+            self._render_empty_floor(r, cx, y)
 
+        self._render_footer(r, cx)
         r.present()
 
-    def _render_footer(self, r, cx: int) -> None:
-        """The highlighted cabinet's blurb, then the error, then the keys."""
-        game = self._highlighted
-        if game is not None:
-            info = game.info
-            if info.fits(r.width, r.height):
-                line, colour = info.blurb, theme.LABEL
-            else:
-                # A greyed row with no explanation is a bug report waiting to
-                # happen. Say what it wants instead.
-                line = (f"needs a {info.min_cols}x{info.min_rows} terminal - "
-                        f"this one is {r.width}x{r.height}")
-                colour = theme.DIM
-            r.ui_text(cx, r.height - 4, _fit(line, r.width - 2),
-                      fill=colour, anchor="n")
+    def _render_header(self, r, cx: int) -> int:
+        """Banner, tagline and coin. Returns the first row below them."""
+        y = 0
+        art = banner.best_fit(r.width - 2, self._banner_budget())
+        for line in art:
+            r.ui_text(cx, y, line, fill=theme.CYAN, anchor="n")
+            y += 1
 
+        r.ui_text(cx, y, theme.TAGLINE, fill=theme.PINK, anchor="n")
+        y += 1
+        if self._blink(theme.COIN_BLINK_SECONDS):
+            r.ui_text(cx, y, theme.INSERT_COIN, fill=theme.YELLOW, anchor="n")
+        y += 2
+        return y
+
+    def _render_grid(self, r, top: int) -> None:
+        width, height = self._grid_region()
+        slots = cards.layout(len(self.app.games), self.selected, width, height)
+        cursor = self._blink(theme.BLINK_SECONDS)
+
+        for slot in slots:
+            game = self.app.games[slot.index]
+            cards.draw(
+                r, cards.Slot(slot.index, slot.x, slot.y + top), game.info,
+                accent=theme.accent(slot.index),
+                selected=slot.index == self.selected,
+                enabled=self._enabled(game),
+                cursor=cursor,
+            )
+
+        total = cards.pages(len(self.app.games), width, height)
+        if total > 1 and slots:
+            capacity = cards.columns(width) * cards.rows(height)
+            here = self.selected // capacity + 1
+            # Directly under the grid rather than at a fixed row near the
+            # bottom, where it would land on the error line.
+            below = top + max(s.y for s in slots) + theme.CARD_H
+            r.ui_text(r.width // 2, below, f"PAGE {here}/{total}",
+                      fill=theme.MUTED, anchor="n")
+
+    def _render_footer(self, r, cx: int) -> None:
         if self.app.error:
             r.ui_text(cx, r.height - 3, _fit(self.app.error, r.width - 2),
                       fill=theme.ERROR, anchor="n")
-        r.ui_text(cx, r.height - 2, MENU_HELP, fill=theme.DIM, anchor="n")
+        r.ui_text(cx, r.height - 2, _fit(MENU_HELP, r.width - 2),
+                  fill=theme.MUTED, anchor="n")
 
-    def _render_empty_floor(self, r, cx: int) -> None:
-        top = max(4, r.height // 2 - len(EMPTY_FLOOR) // 2)
+    def _render_empty_floor(self, r, cx: int, top: int) -> None:
         for i, line in enumerate(EMPTY_FLOOR):
-            fill = theme.VALUE if i == 0 else theme.DIM
-            r.ui_text(cx, top + i, _fit(line, r.width - 2),
+            fill = theme.YELLOW if i == 0 else theme.MUTED
+            r.ui_text(cx, top + i + 1, _fit(line, r.width - 2),
                       fill=fill, anchor="n")
-        r.ui_text(cx, r.height - 2, "Q quit", fill=theme.DIM, anchor="n")
 
+    def _blink(self, period: float) -> bool:
+        """On for the first half of each period, off for the second.
 
-def _menu_theme():
-    """The engine's Theme, recoloured to the arcade's palette.
-
-    ``dataclasses.replace`` because :class:`~texastoast.ui.theme.Theme` is
-    frozen - building variants that way is what its docstring asks for.
-    """
-    return replace(
-        DEFAULT_THEME,
-        primary=theme.MENU_SELECTED,
-        text=theme.VALUE,
-        dim_text=theme.DIM,
-        disabled=theme.DISABLED,
-        box_fill=theme.MENU_BOX,
-        box_outline=theme.LABEL,
-        outline_width=1,
-        selection_fill=theme.MENU_SELECTION_BG,
-    )
+        ``animation: blink 0.6s step-end infinite`` in ``arcade.css``.
+        """
+        return (self.elapsed % period) < period / 2
