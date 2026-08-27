@@ -3,10 +3,40 @@
 The terminal arcade. One command, a menu of every cabinet installed on the
 machine, and a way into one.
 
+## Install
+
+**pipx is the right tool here.** It puts the commands on your PATH in an
+isolated virtualenv, so an arcade cannot collide with anything else you have
+installed:
+
 ```
-pip install magmacrunch
+pipx install magmacrunch
 magmacrunch
 ```
+
+`pip install magmacrunch` works too, but only reaches your PATH if you are
+inside an activated virtualenv or used `pip install --user`. Run against a
+system Python it will install successfully and then appear to have done
+nothing, which is a confusing five minutes nobody needs.
+
+That one install brings the arcade and all three cabinets.
+
+## Playing
+
+```
+magmacrunch          the arcade — every cabinet on the machine
+george-boole         2048 with logic gates, on its own
+lava-dome            solo hold'em, on its own
+moonlight-drift      the endless drifter, on its own
+```
+
+A game plays identically whether you start it directly or pick it from the
+arcade: the arcade is not a wrapper around them, it is the same host they run
+on.
+
+On the arcade floor, `←→` move between cabinets, `↑↓` move a row, `Enter`
+plays and `Q` quits. **`Esc` inside a game returns to the arcade**, not to the
+shell — which is the whole reason the host exists.
 
 ```
                                                                      __
