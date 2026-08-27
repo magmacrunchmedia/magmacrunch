@@ -27,6 +27,8 @@ hurting anyone running a normal terminal.
 
 from __future__ import annotations
 
+from texastoast.ui import bigtext
+
 #: The arcade page's complete title art, from ``website/arcade/index.html``.
 #:
 #: 119x19 - it needs about a 121x34 terminal, which is a maximised window on a
@@ -82,9 +84,16 @@ WELCOME = r"""           |                            |             |    |
  | | ||---'|    |    |   || | ||---'    |    |   |    |    |   ||---'
  `-'-'`---'`---'`---'`---'` ' '`---'    `---'`---'    `---'`   '`---'"""
 
-#: A middle rung for windows too narrow for any of the art above. Block glyphs
-#: rather than line drawing because at this size the pixel-lettering look is
-#: the point - this is the nearest a terminal gets to Press Start 2P.
+#: The name in the engine's block face, 54x3 - the same lettering the two
+#: cabinets set their own titles in, so the family reads as one thing rather
+#: than as three hand-drawn alphabets.
+BLOCK = bigtext.block("MAGMACRUNCH")
+
+#: A last piece of art before the plain line: two rows rather than three, and
+#: six columns narrower than :data:`BLOCK`, which is the whole of why it is
+#: still here. Hand-drawn, because a two-row face cannot tell B from D and is
+#: therefore no use as a general alphabet - it only works because this one
+#: word happens not to contain the letters that collide.
 WORDMARK = """█▀▄▀█ ▄▀█ █▀▀ █▀▄▀█ ▄▀█ █▀▀ █▀█ █ █ █▄ █ █▀▀ █ █
 █ ▀ █ █▀█ █▄█ █ ▀ █ █▀█ █▄▄ █▀▄ █▄█ █ ▀█ █▄▄ █▀█"""
 
@@ -135,7 +144,7 @@ HERO = over(WELCOME, ARCADE)
 #: The order is not by width. :data:`ARCADE` is narrower than :data:`CHUNKY`
 #: and twice as tall, and which of them a window can take depends on both.
 VARIANTS: tuple[str, ...] = (
-    FULL, STACK, HERO, CHUNKY, ARCADE, WELCOME, WORDMARK, PLAIN,
+    FULL, STACK, HERO, CHUNKY, ARCADE, WELCOME, BLOCK, WORDMARK, PLAIN,
 )
 
 
@@ -159,5 +168,5 @@ def best_fit(cols: int, rows: int) -> list[str]:
     return []
 
 
-__all__ = ["ARCADE", "CHUNKY", "FULL", "HERO", "PLAIN", "STACK", "VARIANTS",
+__all__ = ["ARCADE", "BLOCK", "CHUNKY", "FULL", "HERO", "PLAIN", "STACK", "VARIANTS",
            "WELCOME", "WORDMARK", "best_fit", "lines", "over", "size"]

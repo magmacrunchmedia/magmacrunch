@@ -562,9 +562,20 @@ def test_the_banner_stands_down_before_the_cabinets_do():
     assert _chose(banner.STACK, 78, _budget(32))
     assert _chose(banner.CHUNKY, 78, _budget(24))
     assert _chose(banner.ARCADE, 70, _budget(24))
-    assert _chose(banner.WORDMARK, 58, _budget(22))
+    assert _chose(banner.BLOCK, 58, _budget(22))
+    # WORDMARK earns its place in the six columns between BLOCK's 54 and its
+    # own 48 - the only band where the two-row face is the last art standing.
+    assert _chose(banner.WORDMARK, 50, _budget(22))
     assert _chose(banner.PLAIN, 38, _budget(18))
     assert banner.best_fit(20, 8) == []
+
+
+def test_the_arcade_and_the_cabinets_are_lettered_in_the_same_face():
+    """BLOCK comes from texastoast.ui.bigtext, which is where George Boole and
+    Lava Dome get their titles too."""
+    from texastoast.ui import bigtext
+
+    assert banner.BLOCK == bigtext.block("MAGMACRUNCH")
 
 
 def test_a_standard_terminal_gets_a_wordmark():

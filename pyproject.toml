@@ -24,7 +24,7 @@ keywords = ["arcade", "terminal", "tui", "games", "launcher"]
 # with them uninstalled and finds a game published later without a release
 # here. See AGENTS.md.
 dependencies = [
-    "texastoast[tui]>=0.9.0",
+    "texastoast[tui]>=0.10.0",
     "magmacrunch-george-boole>=0.1.0",
     "magmacrunch-thld>=0.1.0",
 ]
