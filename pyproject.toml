@@ -7,7 +7,7 @@ build-backend = "hatchling.build"
 # magmacrunch-thld exists to claim a family PyPI cannot scope; this is the
 # family name itself, and it is the command you type.
 name = "magmacrunch"
-version = "0.1.1"
+version = "0.1.2"
 description = "The magmacrunch terminal arcade - a menu of every installed cabinet"
 readme = "README.md"
 license = "PolyForm-Noncommercial-1.0.0"
