@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from texastoast.arcade import ArcadeGame, GameInfo
+from magmacrunch.engine.arcade import ArcadeGame, GameInfo
 
 from magmacrunch import theme
 from magmacrunch.scenes import CabinetScene

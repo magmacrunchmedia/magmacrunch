@@ -162,7 +162,8 @@ here; uninstalling makes it vanish; neither needs a release of the arcade.**
 
 Nothing in this package imports a game, so the arcade runs with none installed
 and tells you how to get one. The contract lives in
-[`texastoast.arcade`](https://pypi.org/project/texastoast/); the three
+[`magmacrunch.engine.arcade`](https://github.com/magmacrunchmedia/magmacrunch);
+the three
 cabinets in the table below are worked examples of it.
 
 ## Cabinets
@@ -190,5 +191,5 @@ Truecolor helps but is not required.
 ## Licence
 
 PolyForm Noncommercial 1.0.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE).
-Noncommercial because the games it seats are. The engine underneath,
-[texastoast](https://pypi.org/project/texastoast/), stays Apache-2.0.
+Noncommercial because the games it seats are. The TUI engine
+(`magmacrunch.engine`) stays Apache-2.0.

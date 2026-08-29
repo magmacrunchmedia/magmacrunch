@@ -31,7 +31,7 @@ def main() -> None:
 
     # Imported here, not at module scope, so --help works without the engine
     # or its terminal extra installed.
-    from texastoast.arcade import discover
+    from magmacrunch.engine.arcade import discover
 
     games = discover()
 
@@ -39,7 +39,7 @@ def main() -> None:
         _print(games)
         return
 
-    from texastoast.core.tui_host import TuiHost
+    from magmacrunch.engine.core.tui_host import TuiHost
 
     from magmacrunch.app import ARCADE_INFO, ArcadeApp
 

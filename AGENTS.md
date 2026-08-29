@@ -3,10 +3,18 @@
 The terminal arcade: the `magmacrunch` command, a menu of every installed
 cabinet, and the wiring that seats one on the terminal it is already holding.
 
-The engine is [texastoast](https://pypi.org/project/texastoast/) and its `[tui]`
-backend. `texastoast.arcade` defines the seam this consumes — `GameInfo`,
-`Host`, `ArcadeGame`, `discover` — and `texastoast.core.tui_host.TuiHost` is the
-host that owns the terminal. Neither is reimplemented here.
+## The engine is self-contained
+
+The TUI engine lives in `magmacrunch.engine` — extracted from texastoast's
+terminal backend. It provides the character-cell renderer, scene stack, game
+loop, input handling, and UI widgets. No tkinter, no GUI.
+
+External dependencies are `textual` and `rich` (used only by
+`core/tui_game.py` for the terminal runtime).
+
+The contract for games lives in `magmacrunch.engine.arcade` — `GameInfo`,
+`Host`, `ArcadeGame`, `discover`. texastoast remains available as an
+alternative engine (tkinter/GUI) but is not a dependency of this package.
 
 ## AI Attribution
 
@@ -45,7 +53,7 @@ george-boole = "boole.arcade:GAME"
 ```
 
 pointing at an object with `info: GameInfo` and `start(host) -> scene`. See
-`texastoast.arcade` for the contract and `george-boole/tui/boole/arcade.py` for
+`magmacrunch.engine.arcade` for the contract and `george-boole/tui/boole/arcade.py` for
 a worked example. `magmacrunch --list` says what was found and why anything was
 skipped.
 

@@ -16,8 +16,8 @@ import pytest
 
 pytest.importorskip("textual", reason='needs: pip install -e ".[dev]" with texastoast[tui]')
 
-from texastoast.arcade import ArcadeGame, GameInfo  # noqa: E402
-from texastoast.core.tui_host import TuiHost  # noqa: E402
+from magmacrunch.engine.arcade import ArcadeGame, GameInfo  # noqa: E402
+from magmacrunch.engine.core.tui_host import TuiHost  # noqa: E402
 
 from magmacrunch import banner, cards, theme  # noqa: E402
 from magmacrunch.app import ARCADE_INFO, ArcadeApp  # noqa: E402
@@ -104,7 +104,7 @@ def colours(app: ArcadeApp) -> set:
 
 
 async def _piloted(app: ArcadeApp, size=(80, 24)):
-    from texastoast.core.tui_game import _GameApp
+    from magmacrunch.engine.core.tui_game import _GameApp
 
     textual_app = _GameApp(app.host.game, app.host.game.surface)
     app.host.game._app = textual_app
@@ -571,9 +571,9 @@ def test_the_banner_stands_down_before_the_cabinets_do():
 
 
 def test_the_arcade_and_the_cabinets_are_lettered_in_the_same_face():
-    """BLOCK comes from texastoast.ui.bigtext, which is where George Boole and
+    """BLOCK comes from magmacrunch.engine.ui.bigtext, which is where George Boole and
     Lava Dome get their titles too."""
-    from texastoast.ui import bigtext
+    from magmacrunch.engine.ui import bigtext
 
     assert banner.BLOCK == bigtext.block("MAGMACRUNCH")
 
@@ -806,7 +806,7 @@ def test_a_blurb_full_of_glyphs_does_not_kill_the_listing(tmp_path):
 
     script = tmp_path / "listing.py"
     script.write_text(
-        "from texastoast.arcade import GameInfo\n"
+        "from magmacrunch.engine.arcade import GameInfo\n"
         "from magmacrunch.__main__ import _print\n"
         "class G:\n"
         "    info = GameInfo(key='g', title='Deck \\U0001F0A1',\n"

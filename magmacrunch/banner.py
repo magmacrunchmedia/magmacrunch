@@ -27,7 +27,7 @@ hurting anyone running a normal terminal.
 
 from __future__ import annotations
 
-from texastoast.ui import bigtext
+from magmacrunch.engine.ui import bigtext
 
 #: The arcade page's complete title art, from ``website/arcade/index.html``.
 #:
