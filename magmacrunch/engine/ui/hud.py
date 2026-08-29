@@ -19,8 +19,8 @@ class HUDStat:
 class HUD:
     """Heads-up display overlay for score, health, etc.
 
-    ``surface`` accepts a :class:`~texastoast.render.canvas.CanvasRenderer`
-    (or any :class:`~texastoast.render.abstract.UISurface`) — in which case
+    ``surface`` accepts any
+    :class:`~magmacrunch.engine.render.abstract.UISurface` — in which case
     ``width``/``height`` default from it — or a bare ``tk.Canvas`` for
     backward compatibility.
     """

@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class GameLoop:
-    """Tick-based game loop, driven by a :class:`~texastoast.core.scheduler.Scheduler`.
+    """Tick-based game loop, driven by a :class:`~magmacrunch.engine.core.scheduler.Scheduler`.
 
     The loop re-arms a one-shot timer at the end of every tick, so the only
     thing it needs from its host is ``after``/``after_cancel``. A tkinter root

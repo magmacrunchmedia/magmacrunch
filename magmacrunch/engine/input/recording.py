@@ -13,11 +13,14 @@ a session that crashes mid-game still leaves a readable file.
 
 Buttons are stored as the I2C protocol's ``BTN_*`` bitmask, not as engine
 field names. That one choice makes the format serve both worlds: decoded to
-:class:`InputState` it replays through the engine
-(:class:`ReplayInput`), and fed raw into a
-:class:`~texastoast.i2c.sim.SimBus` it replays through the full hardware
-stack (``SimBus.play_recording``) — which is how a session recorded against
-real firmware becomes a regression test.
+:class:`InputState` it replays through the engine (:class:`ReplayInput`), and
+fed raw it replays through a hardware simulator instead — which is how a
+session recorded against real firmware becomes a regression test.
+
+The simulator half is texastoast's ``i2c.sim.SimBus``, which stayed behind with
+the rest of the hardware support. The format is kept compatible with it anyway:
+a recording is a file, files outlive the process that wrote them, and making
+them mutually unreadable would buy nothing.
 """
 
 from __future__ import annotations

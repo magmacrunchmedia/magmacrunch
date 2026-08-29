@@ -9,13 +9,13 @@ from magmacrunch.engine.ui.theme import DEFAULT_THEME, Theme
 class DialogueBox:
     """Dialogue box with typewriter text and portrait support.
 
-    Drawing is frame-driven, like :class:`~texastoast.ui.hud.HUD`: call
+    Drawing is frame-driven, like :class:`~magmacrunch.engine.ui.hud.HUD`: call
     :meth:`update` from the game's update function and :meth:`render` from its
     render function. A renderer that clears the canvas each frame would
     otherwise wipe the box off screen while the box still believes it is up.
 
-    ``surface`` accepts a :class:`~texastoast.render.canvas.CanvasRenderer`
-    (or any :class:`~texastoast.render.abstract.UISurface`) — in which case
+    ``surface`` accepts any
+    :class:`~magmacrunch.engine.render.abstract.UISurface` — in which case
     ``width``/``height`` default from it — or a bare ``tk.Canvas`` for
     backward compatibility.
     """

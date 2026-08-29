@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 @dataclass
 class Config:
-    title: str = "texastoast"
+    title: str = "magmacrunch"
     width: int = 640
     height: int = 480
     fps: int = 30

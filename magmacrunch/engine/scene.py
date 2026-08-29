@@ -1,6 +1,7 @@
 """Scenes — modality as a stack instead of a pile of flags.
 
-Every texastoast game before 0.5.0 hand-rolled its modal state: a ``paused``
+Every game written against this engine's predecessor hand-rolled its modal
+state: a ``paused``
 global, a ``showing_dialogue`` global, an update() that early-returned while
 either was set, and a keypress handler that dispatched down an if-chain. The
 scene stack subsumes all of it: **pushing a scene freezes the scenes below by

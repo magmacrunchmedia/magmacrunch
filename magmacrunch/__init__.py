@@ -4,7 +4,7 @@ A menu of every installed cabinet, and the wiring that seats one on the
 terminal it is already holding.
 
 Games are found by enumerating the ``magmacrunch.games`` entry point group -
-see :mod:`texastoast.arcade` for the contract. **Nothing in this package
+see :mod:`magmacrunch.engine.arcade` for the contract. **Nothing in this package
 imports a game.** Installing one makes it appear here; uninstalling makes it
 vanish; neither needs a release of the arcade.
 

@@ -5,7 +5,7 @@ widget files; restyling a game meant passing every color kwarg to every
 widget. A :class:`Theme` states it once::
 
     from dataclasses import replace
-    from texastoast import DEFAULT_THEME, Theme
+    from magmacrunch.engine.ui.theme import DEFAULT_THEME, Theme
 
     ocean = Theme(primary="#4fc3f7", selection_fill="#112233")
     # or tweak the default:

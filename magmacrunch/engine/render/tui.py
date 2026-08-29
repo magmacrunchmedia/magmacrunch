@@ -1,9 +1,9 @@
 """Terminal render backend — satisfies ``Renderer`` and ``UISurface`` over a cell grid.
 
 This module imports no terminal library. It draws into a
-:class:`~texastoast.render.cellbuffer.CellBuffer` and calls ``flush()`` on an
+:class:`~magmacrunch.engine.render.cellbuffer.CellBuffer` and calls ``flush()`` on an
 injected *surface* when the frame is done. Textual supplies that surface today
-(:mod:`texastoast.core.tui_game`); a hand-written ANSI backend would supply a
+(:mod:`magmacrunch.engine.core.tui_game`); a hand-written ANSI backend would supply a
 different one and nothing here would change.
 
 **One coordinate unit is one character cell, not a pixel.** A terminal cell is
@@ -15,7 +15,7 @@ factor here would bake one game's aspect assumption into every other game.
 What a terminal cannot honestly do is drawn as follows:
 
 * ``draw_image`` is a no-op. Sprite sheets are the shared contract across
-  adenosine/magnolia/texastoast, and a character grid has no way to honor them.
+  adenosine and magnolia, and a character grid has no way to honor them.
   Games wanting terminal art draw glyphs.
 * Outlines one cell thick are the closest thing to a hairline stroke, so
   ``outline_width`` selects only *whether* a border is drawn, not how thick.
@@ -51,10 +51,11 @@ class _NullSurface:
 class TuiRenderer:
     """Draws into a character-cell buffer.
 
-    Satisfies both :class:`~texastoast.render.abstract.Renderer` and
-    :class:`~texastoast.render.abstract.UISurface` structurally, exactly as
-    :class:`~texastoast.render.canvas.CanvasRenderer` does, so UI widgets and
-    game render functions work over either without knowing which they have.
+    Satisfies both :class:`~magmacrunch.engine.render.abstract.Renderer` and
+    :class:`~magmacrunch.engine.render.abstract.UISurface` structurally, so UI
+    widgets and game render functions work over it without knowing what they
+    have — the same way they worked over the tkinter canvas backend these
+    protocols were first written against.
 
     ``surface`` is anything with ``flush(buffer)``; it defaults to a no-op so a
     renderer can be built and asserted against with no terminal at all.

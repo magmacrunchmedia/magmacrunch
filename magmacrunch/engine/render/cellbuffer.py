@@ -3,7 +3,7 @@
 This module is deliberately framework-free: no Textual, no Rich, no curses, no
 tkinter. It is the half of a terminal backend that has nothing to do with *which*
 terminal library is driving it, so it lives on its own rather than inside
-:mod:`texastoast.render.tui`.
+:mod:`magmacrunch.engine.render.tui`.
 
 The split matters because a hand-written ANSI backend is a stated long-term goal.
 When that arrives it consumes this buffer and adds only the parts that are

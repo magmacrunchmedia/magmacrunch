@@ -1,8 +1,8 @@
 """A terminal host — owns the screen so a game does not have to.
 
-The concrete counterpart to :class:`texastoast.arcade.Host`. That module names
+The concrete counterpart to :class:`magmacrunch.engine.arcade.Host`. That module names
 the contract and imports nothing; this one implements it over
-:class:`~texastoast.core.tui_game.TuiGame`, and therefore needs the ``tui``
+:class:`~magmacrunch.engine.core.tui_game.TuiGame`, and therefore needs the ``tui``
 extra.
 
 Everything here is generic. Building the terminal, holding the scene stack,
@@ -34,10 +34,10 @@ from magmacrunch.engine.scene import SceneStack
 class TuiHost:
     """Owns a terminal, a renderer and a stack of scenes.
 
-    Satisfies :class:`texastoast.arcade.Host` structurally.
+    Satisfies :class:`magmacrunch.engine.arcade.Host` structurally.
     """
 
-    def __init__(self, title: str = "texastoast", fps: int = 20,
+    def __init__(self, title: str = "magmacrunch", fps: int = 20,
                  hold_ms: int = 0, **game_kwargs: Any):
         self._game = TuiGame(title=title, fps=fps,
                              input_source=TuiInput(hold_ms=hold_ms),

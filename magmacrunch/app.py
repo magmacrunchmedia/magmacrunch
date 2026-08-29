@@ -5,7 +5,7 @@ the cabinets that were found, and the one decision the launcher actually makes:
 seating a game.
 
 **The terminal is not owned here.** It belongs to a
-:class:`~texastoast.core.tui_host.TuiHost`, which this is handed - the same
+:class:`~magmacrunch.engine.core.tui_host.TuiHost`, which this is handed - the same
 arrangement the games use, for the same reason. The launcher is not a special
 case of the host; it is another thing seated on one, which is why the menu can
 sit underneath a game and come back when the game leaves.
@@ -48,7 +48,7 @@ class ArcadeApp:
 
     def __init__(self, host: Any, games: list[ArcadeGame] | None = None):
         self.host = host
-        #: Sorted by title, the way :func:`texastoast.arcade.discover` returns
+        #: Sorted by title, the way :func:`magmacrunch.engine.arcade.discover` returns
         #: them. Discovery happens before the terminal is taken - see
         #: ``__main__`` - so this is handed in rather than looked up.
         self.games: list[ArcadeGame] = list(games or [])
@@ -75,7 +75,7 @@ class ArcadeApp:
         widgets. It is therefore the first moment a bad install can raise, and
         it raises with the terminal live and a menu underneath.
 
-        :func:`texastoast.arcade.discover` already refuses to let one broken
+        :func:`magmacrunch.engine.arcade.discover` already refuses to let one broken
         game take down the whole menu. This keeps that promise past the point
         where discovery stops looking: the arcade stays up and says which
         cabinet is out of order.

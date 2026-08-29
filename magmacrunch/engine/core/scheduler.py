@@ -1,4 +1,4 @@
-"""The scheduling seam between :class:`~texastoast.core.loop.GameLoop` and its host.
+"""The scheduling seam between :class:`~magmacrunch.engine.core.loop.GameLoop` and its host.
 
 ``GameLoop`` drives itself by re-arming a one-shot timer at the end of every
 tick. That is the *only* thing it needs from the outside world — two methods,

@@ -46,10 +46,16 @@ jobs:
           python-version: ${{ matrix.python }}
 
       # --no-deps because pyproject lists the cabinets, and installing them
-      # would defeat the point of the job.
+      # would defeat the point of the job. It also means the engine's own
+      # dependencies have to be named here: textual and rich are what
+      # `magmacrunch.engine` needs, and with --no-deps nothing else supplies
+      # them. They used to arrive as transitive dependencies of
+      # `texastoast[tui]`, which is how this job stayed green through a
+      # migration that removed texastoast from the project entirely — a stale
+      # line was carrying the real requirement.
       - name: Install the launcher, without its cabinets
         run: |
-          pip install "texastoast[tui]>=0.10.0" pytest
+          pip install "textual>=0.40" "rich>=13.0" pytest
           pip install --no-deps -e .
 
       - run: python -m pytest -q

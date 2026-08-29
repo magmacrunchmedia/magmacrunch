@@ -9,13 +9,13 @@ from magmacrunch.engine.ui.theme import DEFAULT_THEME, Theme
 class Menu:
     """Selectable menu with keyboard/controller navigation.
 
-    Drawing is frame-driven, like :class:`~texastoast.ui.hud.HUD`: call
+    Drawing is frame-driven, like :class:`~magmacrunch.engine.ui.hud.HUD`: call
     :meth:`render` from the game's render function. A renderer that clears the
     canvas each frame would otherwise wipe the menu off screen while the menu
     still believes it is up.
 
-    ``surface`` accepts a :class:`~texastoast.render.canvas.CanvasRenderer`
-    (or any :class:`~texastoast.render.abstract.UISurface`) — in which case
+    ``surface`` accepts any
+    :class:`~magmacrunch.engine.render.abstract.UISurface` — in which case
     ``width``/``height`` default from it — or a bare ``tk.Canvas`` for
     backward compatibility.
 
@@ -25,7 +25,7 @@ class Menu:
     32-unit rows is comically off-screen. Pass ``menu_width=34,
     item_height=1, title_height=2, item_padding=1`` for a TUI. They are
     constructor arguments rather than theme fields for the reason
-    :mod:`texastoast.ui.theme` gives: a theme is a palette, and how big a menu
+    :mod:`magmacrunch.engine.ui.theme` gives: a theme is a palette, and how big a menu
     is depends on what is drawing it.
     """
 

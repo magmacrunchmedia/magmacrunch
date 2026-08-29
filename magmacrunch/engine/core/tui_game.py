@@ -1,17 +1,19 @@
 """Textual host for the engine — the terminal counterpart to :class:`Game`.
 
-This is the only module in texastoast that imports Textual, and it is imported
-lazily (see :mod:`texastoast.core`), so the package keeps its zero required
-dependencies. Install with the ``tui`` extra to use it::
-
-    pip install "texastoast[tui]"
+This is the only module in the engine that imports Textual, and it is imported
+lazily (see :mod:`magmacrunch.engine.core`). Textual is a hard dependency here
+rather than the optional extra it was in texastoast, so the laziness is no
+longer about whether it is installed — it is about *when* it starts. Printing
+``magmacrunch --list`` should not have to boot a terminal framework, and the
+cell buffer below this must stay usable without one. ``tests/engine/
+test_no_hard_deps.py`` holds that line.
 
 Three pieces live here:
 
 * :class:`TextualScheduler` — ``after``/``after_cancel`` over Textual's timers,
-  which is the entire adaptation :class:`~texastoast.core.loop.GameLoop` needs.
+  which is the entire adaptation :class:`~magmacrunch.engine.core.loop.GameLoop` needs.
 * :class:`GameSurface` — one Textual widget that paints a
-  :class:`~texastoast.render.cellbuffer.CellBuffer`. Deliberately a *single*
+  :class:`~magmacrunch.engine.render.cellbuffer.CellBuffer`. Deliberately a *single*
   widget rather than a tree: a game repaints everything every frame, so
   Textual's reactive per-widget diffing has nothing to offer it and would only
   add overhead.
@@ -50,7 +52,7 @@ DEFAULT_ROWS = 24
 
 
 class TextualScheduler:
-    """Satisfies :class:`~texastoast.core.scheduler.Scheduler` using Textual timers.
+    """Satisfies :class:`~magmacrunch.engine.core.scheduler.Scheduler` using Textual timers.
 
     Textual measures delays in seconds and returns a ``Timer`` object; the loop
     speaks milliseconds and treats the handle as opaque. That mismatch is the
@@ -78,7 +80,7 @@ class GameSurface(Widget):
     """Paints a :class:`CellBuffer` — one widget, filling the screen.
 
     ``flush`` is the surface half of the contract
-    :meth:`~texastoast.render.tui.TuiRenderer.present` calls: it takes the
+    :meth:`~magmacrunch.engine.render.tui.TuiRenderer.present` calls: it takes the
     finished frame and asks Textual to repaint.
     """
 
@@ -160,11 +162,11 @@ class GameSurface(Widget):
 
 class TuiInput:
     """Keyboard input from a terminal, as an
-    :class:`~texastoast.input.abstract.InputSource`.
+    :class:`~magmacrunch.engine.input.abstract.InputSource`.
 
     Terminals report key *presses* and never releases, so held state cannot be
-    observed the way :mod:`texastoast.input.keyboard` observes it under tkinter.
-    Two modes cover the difference:
+    observed the way a GUI toolkit observes it, by pairing a key-down event
+    with its key-up. Two modes cover the difference:
 
     ``hold_ms = 0`` (the default) — **edge** semantics. A press sets the button
     for exactly one :meth:`poll`, then clears. This is what a turn-based game

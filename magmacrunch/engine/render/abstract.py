@@ -1,14 +1,16 @@
 """Renderer protocols — the seam between the engine and any drawing backend.
 
-texastoast draws with tkinter today, but the eventual target is console-class
-hardware where tkinter does not go (an SDL or framebuffer backend). These
-protocols capture what the engine actually asks of a backend, so game code
-written against them ports for free when that backend arrives.
+This engine draws through Textual today, but the protocols are older than that
+backend and outlive it: a hand-written ANSI stack is the next one, and console
+hardware the one after. They capture what the engine actually asks of a
+backend, so game code written against them ports for free when one arrives.
 
 Both are structural (:class:`typing.Protocol`): a backend implements them by
 having the methods, not by inheriting anything.
-:class:`~texastoast.render.canvas.CanvasRenderer` satisfies both. This module
-must never import tkinter.
+:class:`~magmacrunch.engine.render.tui.TuiRenderer` satisfies both, and so did
+the tkinter canvas backend these were first written against — which is the
+evidence that they describe a seam rather than one implementation. **This
+module must never import a backend.**
 """
 
 from __future__ import annotations

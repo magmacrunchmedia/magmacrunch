@@ -10,7 +10,7 @@ font, because they fill their cell.
 That is what this is. It is not a text renderer and not a widget - it turns a
 string into lines, and the caller draws them however it draws anything else::
 
-    from texastoast.ui import bigtext
+    from magmacrunch.engine.ui import bigtext
 
     for i, line in enumerate(bigtext.lines("LAVA DOME")):
         renderer.ui_text(x, y + i, line, fill=theme.TITLE)

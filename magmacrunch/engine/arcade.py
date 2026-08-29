@@ -1,6 +1,6 @@
 """The arcade seam — what a game exposes so that something else can launch it.
 
-A game normally owns its terminal: it builds a :class:`~texastoast.core.tui_game.TuiGame`,
+A game normally owns its terminal: it builds a :class:`~magmacrunch.engine.core.tui_game.TuiGame`,
 picks a frame rate, decides how input behaves, and runs until quit. That is the
 right shape for one game shipped as one command, and both terminal games are
 written that way.
@@ -13,7 +13,7 @@ whoever started it owns it. So this module names the two halves:
 * a **game** owns its rules and its screens, and is handed a host.
 
 Both protocols are structural, like every other seam in this engine
-(:mod:`texastoast.render.abstract`, :mod:`texastoast.core.scheduler`): a game
+(:mod:`magmacrunch.engine.render.abstract`, :mod:`magmacrunch.engine.core.scheduler`): a game
 satisfies :class:`ArcadeGame` by having the members, not by inheriting anything.
 
 **This module depends on no game, and nothing here reaches downward.** That is
@@ -22,8 +22,7 @@ games are not, and a launcher that depends on games is not either. The engine
 can name the contract without ever importing a consumer of it — the same
 relationship `render/abstract.py` has with its backends.
 
-Discovery is by entry point, matching how :mod:`texastoast.mgs` is found by
-magmascript. A game package declares::
+Discovery is by entry point. A game package declares::
 
     [project.entry-points."magmacrunch.games"]
     george-boole = "boole.arcade:GAME"
@@ -38,7 +37,7 @@ from dataclasses import dataclass
 from typing import Any, Protocol, runtime_checkable
 
 #: The entry point group a launcher enumerates. Named for the arcade rather
-#: than the engine because it is the arcade's namespace, not texastoast's —
+#: than the engine because it is the arcade's namespace, not the engine's —
 #: this module only defines the shape of what goes in it.
 ENTRY_POINT_GROUP = "magmacrunch.games"
 
@@ -83,7 +82,7 @@ class GameInfo:
     #:
     #: Decay suits a held *direction*, where overshoot is survivable. For a
     #: control whose timing is the game, leave this at 0 and drive it from
-    #: discrete presses instead — see :class:`~texastoast.core.tui_game.TuiInput`.
+    #: discrete presses instead — see :class:`~magmacrunch.engine.core.tui_game.TuiInput`.
     hold_ms: int = 0
 
     #: Smallest terminal the game draws in. A launcher can warn before seating
@@ -107,12 +106,12 @@ class Host(Protocol):
 
     @property
     def renderer(self) -> Any:
-        """A :class:`~texastoast.render.abstract.Renderer` and ``UISurface``."""
+        """A :class:`~magmacrunch.engine.render.abstract.Renderer` and ``UISurface``."""
         ...
 
     @property
     def input(self) -> Any:
-        """The :class:`~texastoast.input.abstract.InputSource` for this session.
+        """The :class:`~magmacrunch.engine.input.abstract.InputSource` for this session.
 
         Poll it for held state. Discrete keys arrive at the top scene's
         ``handle_key`` instead, which is what a turn-based game should use.
@@ -149,7 +148,7 @@ class ArcadeGame(Protocol):
         """Build the game's root scene against ``host``.
 
         Returns a scene — anything with ``update(dt)`` and ``render()``, per
-        :mod:`texastoast.scene`. The caller pushes it; this method must not
+        :mod:`magmacrunch.engine.scene`. The caller pushes it; this method must not
         push it itself, or a launcher cannot decide what to do with it.
 
         Called once per play. A game returning to the menu and being chosen

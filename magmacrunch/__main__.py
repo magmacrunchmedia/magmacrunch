@@ -4,7 +4,7 @@
     magmacrunch --list     print the installed cabinets and exit
 
 Discovery happens here, before the terminal is taken, and that placement is
-load-bearing. :func:`texastoast.arcade.discover` reports a game it could not
+load-bearing. :func:`magmacrunch.engine.arcade.discover` reports a game it could not
 load with :func:`warnings.warn`, and a warning written onto a live Textual
 screen corrupts it. Enumerating first puts anything it has to say on an
 ordinary terminal, where it can be read.
