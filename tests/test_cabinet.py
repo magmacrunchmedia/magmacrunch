@@ -14,13 +14,12 @@ import asyncio
 
 import pytest
 
-pytest.importorskip("textual", reason='needs: pip install -e ".[dev]" with texastoast[tui]')
-
-from magmacrunch.engine.arcade import ArcadeGame, GameInfo  # noqa: E402
-from magmacrunch.engine.core.tui_host import TuiHost  # noqa: E402
+pytest.importorskip("textual", reason='needs: pip install -e ".[dev]"')
 
 from magmacrunch import banner, cards, theme  # noqa: E402
 from magmacrunch.app import ARCADE_INFO, ArcadeApp  # noqa: E402
+from magmacrunch.engine.arcade import ArcadeGame, GameInfo  # noqa: E402
+from magmacrunch.engine.core.tui_host import TuiHost  # noqa: E402
 from magmacrunch.scenes import CabinetScene  # noqa: E402
 
 # ── Fakes ───────────────────────────────────────────────────────────

@@ -51,7 +51,7 @@ jobs:
       # imports no game, which is the rule the whole design rests on.
       - name: Test, with no cabinets on the machine
         run: |
-          pip install "texastoast[tui]>=0.10.0" pytest ruff
+          pip install textual rich pytest ruff
           pip install --no-deps -e .
           python -m pytest -q
           ruff check .
