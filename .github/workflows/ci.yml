@@ -1,4 +1,4 @@
-# The launcher's suite, run against fake cabinets on a GitHub-hosted runner.
+# The launcher's suite, run against fake cabinets on GitHub-hosted runners.
 #
 # Deliberately installed WITHOUT the games it depends on. `ArcadeGame` is a
 # structural protocol, so the tests satisfy it with fakes — and a suite that
@@ -18,23 +18,55 @@ on:
 
 jobs:
   tests:
-    name: tests (no cabinets)
+    name: tests (no cabinets, ${{ matrix.os }}, py${{ matrix.python }})
+
+    # `requires-python = ">=3.10"` and a README that offers macOS, Linux and
+    # Windows are both promises, and a single ubuntu/3.12 job tested neither.
+    # Nothing here is compiled — every package in the stack is a py3-none-any
+    # wheel — so what this actually guards is the places pure Python still
+    # differs: console-script installation, path handling, and the terminal's
+    # encoding. That last one is not hypothetical on Windows, where stdout is
+    # not UTF-8 by default and the banner is drawn out of block glyphs.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        # The floor and the ceiling. Everything between them is interpolation;
+        # the versions that break are the oldest one still supported and the
+        # newest one released, and 3.14 is where an upstream that has not caught
+        # up yet will show itself first.
+        python: ["3.10", "3.14"]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      # --no-deps because pyproject lists the cabinets, and installing them
+      # would defeat the point of the job.
+      - name: Install the launcher, without its cabinets
+        run: |
+          pip install "texastoast[tui]>=0.10.0" pytest
+          pip install --no-deps -e .
+
+      - run: python -m pytest -q
+
+      # Runs the installed console script rather than `python -m`, because the
+      # entry point is the thing users type and the thing most likely to be
+      # missing on a platform nobody tested.
+      - name: An empty arcade still runs
+        run: magmacrunch --list
+
+  # Once, not six times: lint is a property of the source, not of the platform.
+  lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
-      # --no-deps because pyproject lists the cabinets, and installing them
-      # would defeat the point of the job.
-      - name: Install the launcher, without its cabinets
-        run: |
-          pip install "texastoast[tui]>=0.10.0" pytest ruff
-          pip install --no-deps -e .
-
-      - run: python -m pytest -q
+      - run: pip install ruff
       - run: ruff check .
-
-      - name: An empty arcade still runs
-        run: magmacrunch --list
