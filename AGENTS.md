@@ -89,3 +89,14 @@ skipped.
 PolyForm Noncommercial 1.0.0, because it depends on Noncommercial games. The
 engine underneath stays Apache-2.0; a permissive dependency under a restrictive
 package is fine, the reverse would not be.
+
+**That split is now backed by artifacts, not just by this paragraph.** Until
+0.4.1 it was prose only — `NOTICE` said the whole repository was Noncommercial,
+there was no Apache text anywhere, and the engine was therefore Noncommercial
+under the only file that governed. There are now `LICENSE-APACHE` at the root,
+`magmacrunch/engine/LICENSE`, an SPDX header on every engine module, and a
+`NOTICE` that carves the exception out explicitly.
+
+**A new file under `magmacrunch/engine/` needs the two-line SPDX header**, or
+it ships under the wrong licence. `test_every_engine_file_says_it_is_apache`
+in `tests/engine/test_no_hard_deps.py` is what catches you forgetting.

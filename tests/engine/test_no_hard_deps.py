@@ -118,3 +118,55 @@ def test_the_game_loop_runs_with_no_host_at_all():
 # — there is no extra to leave out, Textual being a hard requirement, and
 # `magmacrunch.engine` exposes no lazily-resolved TuiGame attribute to ask for.
 # A test whose premise no longer exists is worse than no test.
+
+
+# ── The licence split, as an artifact rather than a paragraph ───────
+
+
+def test_every_engine_file_says_it_is_apache():
+    """The engine is Apache-2.0 and the launcher is not, and a file that does
+    not say so ships under the wrong one.
+
+    Until 0.4.1 the split was prose in README and AGENTS.md with nothing
+    behind it: NOTICE said the whole repository was Noncommercial, and no
+    Apache text existed anywhere in the tree. Adding the header to every file
+    once fixes that day; this is what keeps the next file from missing it.
+    """
+    import pathlib
+
+    engine = pathlib.Path(__file__).resolve().parent.parent.parent / "magmacrunch" / "engine"
+    missing = [
+        path.name
+        for path in sorted(engine.rglob("*.py"))
+        if "SPDX-License-Identifier: Apache-2.0"
+        not in path.read_text(encoding="utf-8")[:200]
+    ]
+    assert not missing, f"engine files with no SPDX header: {missing}"
+
+
+def test_the_launcher_is_not_tagged_apache():
+    """The header belongs to the engine, not to everything.
+
+    A blanket sweep that tagged `magmacrunch/*.py` too would relicense the
+    launcher by accident, and the mistake would look exactly like the fix.
+    """
+    import pathlib
+
+    package = pathlib.Path(__file__).resolve().parent.parent.parent / "magmacrunch"
+    mistagged = [
+        path.name
+        for path in sorted(package.glob("*.py"))
+        if "Apache-2.0" in path.read_text(encoding="utf-8")[:200]
+    ]
+    assert not mistagged, f"launcher files tagged Apache: {mistagged}"
+
+
+def test_both_licence_files_exist():
+    """NOTICE names them; a missing one makes it a promise rather than a fact."""
+    import pathlib
+
+    root = pathlib.Path(__file__).resolve().parent.parent.parent
+    assert (root / "LICENSE").is_file()
+    assert (root / "LICENSE-APACHE").is_file()
+    assert (root / "magmacrunch" / "engine" / "LICENSE").is_file()
+    assert "Apache License" in (root / "LICENSE-APACHE").read_text(encoding="utf-8")

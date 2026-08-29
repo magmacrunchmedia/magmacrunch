@@ -17,6 +17,8 @@ from __future__ import annotations
 
 import argparse
 
+from magmacrunch import __version__
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(
@@ -26,6 +28,14 @@ def main() -> None:
     parser.add_argument(
         "--list", action="store_true", dest="list_only",
         help="print the installed cabinets and exit, without opening the arcade",
+    )
+    # Reads the literal in `magmacrunch/__init__.py` rather than asking
+    # importlib.metadata, so it answers the same in a source checkout as in an
+    # installed wheel. That literal drifted a whole release behind pyproject
+    # once, unnoticed because nothing read it; this is what now reads it, and
+    # `test_the_version_is_the_one_the_package_declares` is what checks it.
+    parser.add_argument(
+        "--version", action="version", version=f"magmacrunch {__version__}",
     )
     args = parser.parse_args()
 
@@ -60,10 +70,12 @@ def _print(games: list) -> None:
     _degrade_gracefully()
 
     if not games:
+        from magmacrunch.cabinets import PACKAGES
+
         print("No cabinets installed.")
         print()
-        print("  pip install magmacrunch-george-boole")
-        print("  pip install magmacrunch-thld")
+        for name in PACKAGES:
+            print(f"  pip install {name}")
         print()
         print("Any package declaring a magmacrunch.games entry point appears")
         print("here. Nothing above this line is a hardcoded list.")

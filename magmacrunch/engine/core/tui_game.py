@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 magmacrunch media
 """Textual host for the engine — the terminal counterpart to :class:`Game`.
 
 This is the only module in the engine that imports Textual, and it is imported

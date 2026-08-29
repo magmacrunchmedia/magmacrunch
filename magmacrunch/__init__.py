@@ -15,6 +15,6 @@ nothing: the launcher's own screens pull in the engine's terminal backend, and
 
 from __future__ import annotations
 
-__version__ = "0.3.0"
+__version__ = "0.4.1"
 
 __all__ = ["__version__"]

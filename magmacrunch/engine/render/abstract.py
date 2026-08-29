@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 magmacrunch media
 """Renderer protocols — the seam between the engine and any drawing backend.
 
 This engine draws through Textual today, but the protocols are older than that

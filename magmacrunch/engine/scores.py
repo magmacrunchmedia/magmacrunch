@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 magmacrunch media
 """High scores that survive the process, with no server and no dependencies.
 
 A score you lose when you close the terminal is not a high score, it is a

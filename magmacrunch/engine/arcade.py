@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 magmacrunch media
 """The arcade seam — what a game exposes so that something else can launch it.
 
 A game normally owns its terminal: it builds a :class:`~magmacrunch.engine.core.tui_game.TuiGame`,

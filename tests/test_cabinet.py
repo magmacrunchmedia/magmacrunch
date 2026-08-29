@@ -844,13 +844,138 @@ def test_the_launcher_imports_no_game():
     import subprocess
     import sys
 
+    # All three cabinets' modules, not two: this guard listed `boole` and
+    # `lavadome` and would have stayed green through an import of `drift`.
     code = (
         "import sys, magmacrunch, magmacrunch.app, magmacrunch.banner, "
-        "magmacrunch.cards, magmacrunch.scenes, magmacrunch.theme, "
-        "magmacrunch.__main__; "
-        "leaked = [m for m in ('boole', 'lavadome') if m in sys.modules]; "
+        "magmacrunch.cabinets, magmacrunch.cards, magmacrunch.scenes, "
+        "magmacrunch.theme, magmacrunch.__main__; "
+        "leaked = [m for m in ('boole', 'lavadome', 'drift') "
+        "if m in sys.modules]; "
         "print(leaked)"
     )
     out = subprocess.run([sys.executable, "-c", code], capture_output=True,
                          text=True, check=True)
     assert out.stdout.strip() == "[]", out.stdout
+
+
+# ── What the package says about itself ──────────────────────────────
+
+
+def _pyproject() -> dict:
+    """The packaging metadata, read from source.
+
+    ``tomllib`` is 3.11; this package supports 3.10. Skipping there rather
+    than taking a ``tomli`` dependency for one test is the cheaper trade — the
+    CI matrix runs 3.14 as well, so the check still gates every push.
+    """
+    import pathlib
+    import sys
+
+    if sys.version_info < (3, 11):
+        pytest.skip("tomllib is 3.11+")
+    import tomllib
+
+    root = pathlib.Path(__file__).resolve().parent.parent
+    return tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
+
+
+def test_the_version_is_the_one_the_package_declares():
+    """``__version__`` and pyproject must agree.
+
+    They did not, for a whole release: the literal sat at 0.3.0 while 0.4.0
+    shipped. The release workflow compares the git tag against pyproject and
+    never looks at the module, so nothing caught it — and nothing read
+    ``__version__`` either, which is why it could rot unnoticed. Both halves
+    of that are fixed: this is the check, and ``--version`` is the reader.
+    """
+    import magmacrunch
+
+    assert magmacrunch.__version__ == _pyproject()["project"]["version"]
+
+
+def test_version_prints_it(capsys, monkeypatch):
+    """``--version`` is what makes the literal load-bearing rather than
+    decorative, which is the half of the fix a test alone does not give."""
+    import sys
+
+    import magmacrunch
+    from magmacrunch.__main__ import main
+
+    monkeypatch.setattr(sys, "argv", ["magmacrunch", "--version"])
+    with pytest.raises(SystemExit) as exit_info:
+        main()
+    assert exit_info.value.code == 0
+    assert magmacrunch.__version__ in capsys.readouterr().out
+
+
+# ── The empty floor names every cabinet ─────────────────────────────
+
+
+def test_the_floor_and_the_listing_suggest_the_same_cabinets(capsys):
+    """Two screens say how to get a cabinet, and they had drifted.
+
+    Each named two of the three, omitting moonlight-drift - on precisely the
+    screen that exists because the player has none and needs to be told what
+    to install. They now read one tuple; this is what keeps them doing so.
+    """
+    from magmacrunch.__main__ import _print
+    from magmacrunch.cabinets import PACKAGES
+    from magmacrunch.scenes import EMPTY_FLOOR
+
+    floor = "\n".join(EMPTY_FLOOR)
+    _print([])
+    listing = capsys.readouterr().out
+
+    for name in PACKAGES:
+        assert f"pip install {name}" in floor
+        assert f"pip install {name}" in listing
+
+
+def test_the_empty_floor_names_every_cabinet_the_arcade_installs():
+    """The suggestions and the dependency list cannot disagree.
+
+    ``pip install magmacrunch`` brings a set of cabinets; the empty floor tells
+    someone with none how to get them. If those two lists differ, one of them
+    is lying, and the floor is the one being read by a person.
+    """
+    from magmacrunch.cabinets import PACKAGES
+
+    deps = _pyproject()["project"]["dependencies"]
+    # Requirement strings carry specifiers - take the name off the front.
+    import re
+
+    installed = {
+        re.split(r"[<>=!~\[; ]", dep, maxsplit=1)[0]
+        for dep in deps
+    }
+    cabinets_installed = {name for name in installed
+                          if name.startswith("magmacrunch-")}
+    assert set(PACKAGES) == cabinets_installed
+
+
+def test_the_empty_floor_still_clears_the_footer_at_the_smallest_size():
+    """A fourth cabinet must not quietly draw over the key help.
+
+    The empty floor grows by a line per cabinet, and the smallest terminal the
+    floor claims to work in is fixed. Adding moonlight-drift's line took the
+    slack at 36x17 down to a single row - so the next one lands on the error
+    line, and the failure would be a cosmetic overlap nobody notices until a
+    screenshot. This is the tripwire: it fails when EMPTY_FLOOR outgrows the
+    room, which is the moment to raise MIN_ROWS or shorten the text.
+    """
+    from magmacrunch.scenes import EMPTY_FLOOR
+
+    # What `_render_empty_floor` occupies: it starts one row below the header
+    # and draws a row per line.
+    banner_rows = 1  # the bottom rung; the art stands down to one line
+    top = banner_rows + theme.HEADER_ROWS + 2
+    last_row = top + len(EMPTY_FLOOR)
+
+    # What the footer takes, counted from the bottom as `_render_footer` does.
+    first_footer_row = theme.MIN_ROWS - 4
+
+    assert last_row <= first_footer_row, (
+        f"the empty floor reaches row {last_row} and the footer starts at "
+        f"{first_footer_row} in a {theme.MIN_COLS}x{theme.MIN_ROWS} terminal"
+    )

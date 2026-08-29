@@ -196,6 +196,11 @@ Truecolor helps but is not required.
 
 ## Licence
 
-PolyForm Noncommercial 1.0.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE).
-Noncommercial because the games it seats are. The TUI engine
-(`magmacrunch.engine`) stays Apache-2.0.
+Two licences, split at the same seam the code is. The launcher is PolyForm
+Noncommercial 1.0.0 — [LICENSE](LICENSE) — because the games it seats are. The
+TUI engine, everything under `magmacrunch/engine/`, is Apache-2.0 —
+[LICENSE-APACHE](LICENSE-APACHE) — because it depends on none of them, and
+because texastoast still ships the same extracted code under it.
+
+Every engine file carries an SPDX header saying which. [NOTICE](NOTICE) sets
+out both in full.

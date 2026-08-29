@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 magmacrunch media
 """Terminal render backend — satisfies ``Renderer`` and ``UISurface`` over a cell grid.
 
 This module imports no terminal library. It draws into a

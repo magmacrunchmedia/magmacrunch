@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 magmacrunch media
 """The scheduling seam between :class:`~magmacrunch.engine.core.loop.GameLoop` and its host.
 
 ``GameLoop`` drives itself by re-arming a one-shot timer at the end of every

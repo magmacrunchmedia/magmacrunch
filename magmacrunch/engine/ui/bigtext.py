@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 magmacrunch media
 """Block lettering — a title in a terminal, when a bigger font is not an option.
 
 A terminal program does not choose its font. Whatever the person running it

@@ -7,10 +7,16 @@ build-backend = "hatchling.build"
 # magmacrunch-thld exists to claim a family PyPI cannot scope; this is the
 # family name itself, and it is the command you type.
 name = "magmacrunch"
-version = "0.4.0"
+version = "0.4.1"
 description = "The magmacrunch terminal arcade - a menu of every installed cabinet"
 readme = "README.md"
-license = "PolyForm-Noncommercial-1.0.0"
+# Both, because the distribution genuinely contains both: the launcher is
+# Noncommercial and `magmacrunch/engine/` is Apache-2.0. `AND` is the SPDX way
+# of saying "this holds material under each", which is the true statement -
+# naming only PolyForm would ship the engine's licence text without declaring
+# it, and naming only Apache would understate what governs the launcher.
+license = "PolyForm-Noncommercial-1.0.0 AND Apache-2.0"
+license-files = ["LICENSE", "LICENSE-APACHE"]
 requires-python = ">=3.10"
 authors = [{ name = "magmacrunch media" }]
 keywords = ["arcade", "terminal", "tui", "games", "launcher"]
@@ -27,12 +33,18 @@ keywords = ["arcade", "terminal", "tui", "games", "launcher"]
 # enumerating the `magmacrunch.games` entry point group, so the launcher works
 # with them uninstalled and finds a game published later without a release
 # here. See AGENTS.md.
+#
+# The cabinet floors are the releases that read `Host.seated`, not the oldest
+# that resolve. A cabinet predating it still runs — `seated` is the host's, and
+# an old game simply never asks — but it cannot print the Esc hint, and the
+# README promises that hint unconditionally. A pin that lets an install be
+# quietly less than what is documented is the wrong pin.
 dependencies = [
     "textual>=0.40",
     "rich>=13.0",
-    "magmacrunch-george-boole>=0.1.0",
-    "magmacrunch-thld>=0.1.0",
-    "magmacrunch-moonlight-drift>=0.1.0",
+    "magmacrunch-george-boole>=0.4.0",
+    "magmacrunch-thld>=0.3.0",
+    "magmacrunch-moonlight-drift>=0.4.0",
 ]
 
 [project.optional-dependencies]

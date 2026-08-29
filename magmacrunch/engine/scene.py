@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 magmacrunch media
 """Scenes — modality as a stack instead of a pile of flags.
 
 Every game written against this engine's predecessor hand-rolled its modal

@@ -1,0 +1,14 @@
+The TUI engine — everything under `magmacrunch/engine/` — is licensed under the
+Apache License, Version 2.0. The full text is in LICENSE-APACHE at the root of
+this repository.
+
+Copyright 2026 magmacrunch media
+
+The rest of this package — the launcher (`magmacrunch/*.py`), the tests, the
+build files and the documentation — is PolyForm Noncommercial 1.0.0, in
+LICENSE. A permissive engine under a Noncommercial launcher is fine; the
+reverse would not be, which is why the seam is where it is.
+
+This directory was extracted from texastoast, which was Apache-2.0 and still
+ships its own copy of it. Relicensing the extraction would have made the two
+copies disagree about the same code.

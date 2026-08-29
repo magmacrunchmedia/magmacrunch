@@ -21,15 +21,18 @@ so selection state lives here instead, in :attr:`CabinetScene.selected`.
 
 from __future__ import annotations
 
-from magmacrunch import banner, cards, theme
+from magmacrunch import banner, cabinets, cards, theme
 
 MENU_HELP = "↑↓←→ CHOOSE    ENTER PLAY    Q QUIT"
 
+#: What an arcade with nothing in it says. The install lines come from
+#: :data:`magmacrunch.cabinets.PACKAGES` rather than being written out here,
+#: because ``--list`` prints the same suggestions and the two had drifted -
+#: see that module.
 EMPTY_FLOOR = (
     "NO CABINETS INSTALLED",
     "",
-    "pip install magmacrunch-george-boole",
-    "pip install magmacrunch-thld",
+    *(f"pip install {name}" for name in cabinets.PACKAGES),
     "",
     "Any package declaring a magmacrunch.games entry point",
     "appears here - no release of the arcade needed.",

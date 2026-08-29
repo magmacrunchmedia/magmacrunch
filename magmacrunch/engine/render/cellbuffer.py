@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 magmacrunch media
 """A character-cell framebuffer — the shared substrate of every terminal backend.
 
 This module is deliberately framework-free: no Textual, no Rich, no curses, no

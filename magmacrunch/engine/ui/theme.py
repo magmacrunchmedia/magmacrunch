@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 magmacrunch media
 """Colors and fonts for the built-in UI widgets.
 
 Before 0.5.0 the palette was frozen as string literals scattered across three

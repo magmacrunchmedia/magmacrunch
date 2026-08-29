@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 magmacrunch media
 """A terminal host — owns the screen so a game does not have to.
 
 The concrete counterpart to :class:`magmacrunch.engine.arcade.Host`. That module names

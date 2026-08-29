@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 magmacrunch media
 """Input recording and replay — the ``.ttrec`` format.
 
 A recording is JSON Lines: a header line, then one line per state *change*::
