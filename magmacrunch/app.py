@@ -15,9 +15,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from magmacrunch.engine.arcade import ArcadeGame, GameInfo
-
 from magmacrunch import theme
+from magmacrunch.engine.arcade import ArcadeGame, GameInfo
 from magmacrunch.scenes import CabinetScene
 
 #: The launcher, described with the same dataclass it reads from cabinets.

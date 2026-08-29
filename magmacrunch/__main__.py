@@ -39,9 +39,8 @@ def main() -> None:
         _print(games)
         return
 
-    from magmacrunch.engine.core.tui_host import TuiHost
-
     from magmacrunch.app import ARCADE_INFO, ArcadeApp
+    from magmacrunch.engine.core.tui_host import TuiHost
 
     host = TuiHost(title=ARCADE_INFO.title, fps=ARCADE_INFO.fps,
                    hold_ms=ARCADE_INFO.hold_ms)

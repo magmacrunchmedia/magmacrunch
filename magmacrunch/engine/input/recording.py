@@ -28,6 +28,8 @@ from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
 
+from magmacrunch.engine.input.abstract import InputSource, InputState
+
 # Button bitmask constants (from the I2C protocol, inlined to avoid a
 # hardware dependency).
 BTN_A = 0b00000001
@@ -38,8 +40,6 @@ BTN_UP = 0b00010000
 BTN_DOWN = 0b00100000
 BTN_LEFT = 0b01000000
 BTN_RIGHT = 0b10000000
-
-from magmacrunch.engine.input.abstract import InputSource, InputState
 
 FORMAT_NAME = "ttrec"
 FORMAT_VERSION = 1
