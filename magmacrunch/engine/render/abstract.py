@@ -91,64 +91,26 @@ class UISurface(Protocol):
                 width: float | None = None, group: str = "") -> None: ...
 
 
-class _CanvasUISurface:
-    """Adapts a bare ``tk.Canvas`` to :class:`UISurface`.
+def as_ui_surface(surface: Any) -> Any:
+    """Check a widget's first constructor argument is a :class:`UISurface`.
 
-    The backward-compatibility shim: UI widgets constructed with a raw canvas
-    (the pre-0.4 signature) are wrapped in one of these. No tkinter import —
-    the canvas is duck-typed.
-    """
+    Structural, like every seam in this engine: anything with ``ui_rect`` is
+    one, whatever it inherits from.
 
-    def __init__(self, canvas: Any, width: int, height: int):
-        self._canvas = canvas
-        self._width = width
-        self._height = height
+    Until 0.5.0 this also *wrapped* — a bare ``tk.Canvas`` passed to a widget
+    was adapted by a shim called ``_CanvasUISurface``, which is what the
+    pre-0.4 widget signature took. The shim came across in the extraction and
+    could never run here: adapting a canvas requires a canvas, and this
+    package has no tkinter and must not acquire one. It was 40 lines of
+    unreachable tkinter calls sitting in the file that defines the seam.
 
-    @property
-    def width(self) -> int:
-        return self._width
-
-    @property
-    def height(self) -> int:
-        return self._height
-
-    def begin_group(self, group: str) -> None:
-        self._canvas.delete(group)
-
-    def clear_group(self, group: str) -> None:
-        self._canvas.delete(group)
-
-    def ui_rect(self, x, y, w, h, *, fill, outline="", outline_width=0, group=""):
-        self._canvas.create_rectangle(
-            x, y, x + w, y + h,
-            fill=fill, outline=outline, width=outline_width, tags=group,
-        )
-
-    def ui_text(self, x, y, text, *, fill, font=None, anchor="nw",
-                width=None, group=""):
-        kwargs: dict[str, Any] = {
-            "text": text, "fill": fill, "anchor": anchor, "tags": group,
-        }
-        if font is not None:
-            kwargs["font"] = font
-        if width is not None:
-            kwargs["width"] = width
-        self._canvas.create_text(x, y, **kwargs)
-
-
-def as_ui_surface(surface: Any, width: int | None, height: int | None,
-                  fallback_width: int = 640, fallback_height: int = 480) -> Any:
-    """Resolve a widget's first constructor argument to a :class:`UISurface`.
-
-    Accepts either a real ``UISurface`` (a ``CanvasRenderer``, or any future
-    backend) or a bare ``tk.Canvas`` (the pre-0.4 signature), which gets
-    wrapped. Explicit ``width``/``height`` win; otherwise they come from the
-    surface, and a bare canvas falls back to the engine's defaults.
+    Failing loudly replaces it. Wrapping something that is not a surface only
+    ever deferred the error to the first draw, where it surfaced as a missing
+    method on an object the caller never built and cannot place.
     """
     if hasattr(surface, "ui_rect"):
         return surface
-    return _CanvasUISurface(
-        surface,
-        width if width is not None else fallback_width,
-        height if height is not None else fallback_height,
+    raise TypeError(
+        f"expected a UISurface (something with `ui_rect`), got "
+        f"{type(surface).__name__}"
     )

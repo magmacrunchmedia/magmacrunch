@@ -34,10 +34,32 @@ tests were ported from `texastoast/tests/` afterwards and live in
 Four of texastoast's files were **not** ported and should not be: `test_ui.py`,
 `test_input.py`, `test_render_protocol.py` and `test_loop.py` drive moved
 modules *through* parts that stayed behind — `input/keyboard.py`,
-`render/canvas.py`, `core/game.py` — and `test_recording.py` needs the `i2c`
-package. `tests/conftest.py` there is entirely tkinter fixtures and must never
-be copied: this package has no tkinter dependency and should not acquire one to
-run its tests.
+`render/canvas.py`, `core/game.py`. `tests/conftest.py` there is entirely
+tkinter fixtures and must never be copied: this package has no tkinter
+dependency and should not acquire one to run its tests. (`tests/conftest.py`
+*here* is a different file and a legitimate one — a single fixture pointing
+score reads at a temporary directory. It imports no GUI toolkit.)
+
+**That is a reason not to copy those files, not a reason for the modules to go
+untested**, and the two were conflated here until 0.5.0. What settles the
+question now is `pytest --cov`, which CI runs once on ubuntu — see the
+`coverage` job. The suite sits around 91%, most of it earned indirectly: the
+launcher suite drives a real Textual app, so a module with no test file of its
+own is usually still well covered. **Count lines, not files** — going by
+files said `core/tui_game.py` was the worst hole in the engine, and going by
+lines it was already at 82% while `input/abstract.py` sat at 59%.
+
+`tests/engine/test_input_state.py` is what that second number produced: fresh
+tests for the dataclass, written against the module directly rather than
+ported through the keyboard backend that stayed behind. It is the shape any
+further coverage work here should take.
+
+`test_recording.py` was the fourth unported file, needing the `i2c` package.
+It has no subject any more — `input/recording.py` was **deleted in 0.5.0**. It
+was 148 statements at 0% coverage with no caller anywhere in this repo, which
+coverage is what surfaced. texastoast still ships the module under Apache-2.0
+for anyone who wants input recording; a second copy that nothing called and
+nothing tested was not a spare, it was a liability.
 
 Individual tests dropped during the port say so where they were, rather than
 vanishing — see the notes at the foot of `tests/engine/test_no_hard_deps.py`

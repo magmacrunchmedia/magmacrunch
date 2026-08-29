@@ -55,6 +55,15 @@ class ArcadeApp:
         #: What went wrong last time somebody chose a cabinet, if anything.
         self.error: str = ""
 
+        #: Best score per cabinet, by :attr:`GameInfo.scoreboard`.
+        #:
+        #: Cached rather than read while drawing. ``ScoreBook.best()`` opens
+        #: and parses a file, the floor redraws at 20 fps, and a card that
+        #: asked every frame would be twenty file reads a second per cabinet
+        #: to show a number that changes at most once a visit.
+        self.bests: dict[str, int] = {}
+        self.refresh_scores()
+
         #: The menu. The caller pushes it, so that this class does not decide
         #: what the bottom of somebody else's scene stack is.
         self.root_scene = CabinetScene(self)
@@ -64,6 +73,38 @@ class ArcadeApp:
     @property
     def renderer(self):
         return self.host.renderer
+
+    def refresh_scores(self) -> None:
+        """Re-read every cabinet's best score from disk.
+
+        Called once when the arcade opens and again each time a cabinet hands
+        the terminal back, which is the only moment a score can have changed —
+        the games write them, and a game only runs between those two points.
+
+        A cabinet with no scoreboard is absent from the mapping rather than
+        present as ``0``. An unplayed game and a game somebody scored nothing
+        on are different things, and only one of them should be advertised on
+        the floor.
+        """
+        from magmacrunch.engine.scores import ScoreBook
+
+        self.bests = {}
+        for game in self.games:
+            key = game.info.scoreboard
+            # A game is a third party. A malformed `info`, or a scoreboard on
+            # an unreadable disk, must cost that card its number and nothing
+            # else - the floor still has to draw. `ScoreBook.load` already
+            # swallows OSError and bad JSON; this catches the rest.
+            try:
+                best = ScoreBook(key).best()
+            except Exception:  # noqa: BLE001 - one bad board is not fatal
+                continue
+            if best > 0:
+                self.bests[key] = best
+
+    def best_for(self, game: ArcadeGame) -> int:
+        """``game``'s best score, or ``0`` if it has never been played here."""
+        return self.bests.get(game.info.scoreboard, 0)
 
     # -- The one decision --------------------------------------------
 

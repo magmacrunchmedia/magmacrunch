@@ -86,6 +86,12 @@ command, so a hint printed unconditionally would be a lie half the time.
 Games ask `Host.seated` to tell the two apart, and nothing else about them
 changes — see `magmacrunch.engine.arcade`.
 
+Each card carries your best score on that cabinet, read from the same file
+the game writes when you set one — so it is there the moment you come back
+from the run that set it. A cabinet you have never played says nothing rather
+than `BEST 0`, which would be inviting you to beat a score that does not
+exist.
+
 ```
                                                                      __
     .--------.---.-.-----.--------.---.-.----.----.--.--.-----.----.|  |--.
@@ -103,7 +109,7 @@ changes — see `magmacrunch.engine.arcade`.
       │ 2048 played with logic gates │  │ climb, release to fall.      │
       │ — merge, invert, overflow.   │  │                              │
       │                              │  │                              │
-      │ ▶ ENTER_                     │  │ ▶ ENTER                      │
+      │ ▶ ENTER_        BEST 131,072 │  │ ▶ ENTER           BEST 8,420 │
       └──────────────────────────────┘  └──────────────────────────────┘
                                    PAGE 1/2
 

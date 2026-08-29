@@ -7,7 +7,7 @@ build-backend = "hatchling.build"
 # magmacrunch-thld exists to claim a family PyPI cannot scope; this is the
 # family name itself, and it is the command you type.
 name = "magmacrunch"
-version = "0.4.1"
+version = "0.5.0"
 description = "The magmacrunch terminal arcade - a menu of every installed cabinet"
 readme = "README.md"
 # Both, because the distribution genuinely contains both: the launcher is
@@ -48,7 +48,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=7.0", "ruff>=0.6"]
+dev = ["pytest>=7.0", "pytest-cov>=5.0", "ruff>=0.6"]
 
 [project.scripts]
 magmacrunch = "magmacrunch.__main__:main"
@@ -64,6 +64,26 @@ packages = ["magmacrunch"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+# Coverage is not switched on by default. `pytest -q` is what you run while
+# working and it should stay as fast as it is; `--cov` is what CI adds once.
+[tool.coverage.run]
+source = ["magmacrunch"]
+# The launcher suite drives Textual's pilot, which runs the app on its own
+# thread. Without this, everything the frame loop touches reads as unexecuted
+# and the report is a list of false accusations.
+concurrency = ["thread"]
+
+[tool.coverage.report]
+exclude_also = [
+    "if TYPE_CHECKING:",
+    # Protocol bodies. `...` under a method in a structural seam is the
+    # declaration, not a branch anybody was supposed to run.
+    "^\\s*\\.\\.\\.$",
+    "raise NotImplementedError",
+]
+show_missing = true
+skip_covered = false
 
 [tool.ruff]
 target-version = "py310"

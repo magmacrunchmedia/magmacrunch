@@ -27,17 +27,19 @@ class Camera:
         per-frame factor *at 30 fps*, converted to a time constant, so the
         camera lags by the same distance at any frame rate. It stays last in
         the signature (rather than becoming bare-positional) so that correct
-        0.4.x call sites — keyword ``dt=dt`` and full-positional five-argument
+        call sites — keyword ``dt=dt`` and full-positional five-argument
         calls — keep working unchanged.
 
-        .. versionchanged:: 0.5.0
-            ``dt`` is required. Deprecated since 0.4.0.
+        .. note::
+            ``dt`` has been required for as long as this package has existed.
+            It was optional in texastoast, which this engine was extracted
+            from, and the deprecation ran its course there.
         """
         if dt is None:
             raise TypeError(
                 "Camera.follow() missing required argument 'dt' — pass the "
                 "frame's dt, e.g. camera.follow(x, y, dt=dt). Calling without "
-                "dt was deprecated in 0.4.0: the no-dt path converged twice "
+                "dt was deprecated before the extraction: the no-dt path converged twice "
                 "as fast at 60 fps as at 30."
             )
         target_cx = target_x - self.width / 2

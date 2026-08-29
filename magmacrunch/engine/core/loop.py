@@ -110,7 +110,8 @@ class GameLoop:
             try:
                 self._scheduler.after_cancel(self._after_id)
             except Exception:
-                # Root may already be torn down; nothing left to cancel.
+                # The scheduler may already be torn down - a Textual app
+                # that has exited cancels nothing. Nothing left to do.
                 pass
             self._after_id = None
 

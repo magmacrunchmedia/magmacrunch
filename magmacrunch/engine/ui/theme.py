@@ -2,7 +2,7 @@
 # Copyright 2026 magmacrunch media
 """Colors and fonts for the built-in UI widgets.
 
-Before 0.5.0 the palette was frozen as string literals scattered across three
+The palette was once frozen as string literals scattered across three
 widget files; restyling a game meant passing every color kwarg to every
 widget. A :class:`Theme` states it once::
 
@@ -17,7 +17,7 @@ widget. A :class:`Theme` states it once::
 
 Widgets resolve explicit style kwargs first, then the theme, so existing code
 that passes ``selected_color=...`` keeps winning. :data:`DEFAULT_THEME`
-carries exactly the pre-0.5.0 values — a game that never mentions themes
+carries exactly those original values — a game that never mentions themes
 renders identically.
 
 Layout metrics (menu width, bar sizes) are deliberately not here: those are

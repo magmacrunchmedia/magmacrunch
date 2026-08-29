@@ -76,3 +76,24 @@ jobs:
           python-version: "3.12"
       - run: pip install ruff
       - run: ruff check .
+
+  # Also once. Coverage is a property of the suite, and running it on six
+  # platforms would produce six identical numbers at six times the cost.
+  #
+  # No threshold. The number is here to be looked at when it moves, and a gate
+  # set at today's figure mostly teaches people to write tests that raise it
+  # rather than tests that catch things. What it did already earn its keep on:
+  # `input/recording.py` reported 0%, which is what turned "this module has no
+  # test file" into "this module has no caller either".
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Install the launcher, without its cabinets
+        run: |
+          pip install "textual>=0.40" "rich>=13.0" pytest pytest-cov
+          pip install --no-deps -e .
+      - run: python -m pytest -q --cov

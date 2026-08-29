@@ -16,10 +16,9 @@ class Menu:
     canvas each frame would otherwise wipe the menu off screen while the menu
     still believes it is up.
 
-    ``surface`` accepts any
-    :class:`~magmacrunch.engine.render.abstract.UISurface` — in which case
-    ``width``/``height`` default from it — or a bare ``tk.Canvas`` for
-    backward compatibility.
+    ``surface`` is any
+    :class:`~magmacrunch.engine.render.abstract.UISurface`, in which case
+    ``width``/``height`` default from it.
 
     **Layout metrics are in the surface's own units, not pixels.** They default
     to pixel-sized values because the canvas backend came first, but a terminal
@@ -47,7 +46,7 @@ class Menu:
         title_height: int = 28,
         border_pad: int = 4,
     ):
-        self._surface = as_ui_surface(surface, width, height)
+        self._surface = as_ui_surface(surface)
         # Kept as given, not resolved now: an explicit size is fixed, but an
         # implicit one must be re-read from the surface at render time. A
         # tkinter canvas never changes size, so caching it was harmless there —

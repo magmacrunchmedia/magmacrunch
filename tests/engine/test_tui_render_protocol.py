@@ -40,7 +40,7 @@ def test_tui_renderer_satisfies_both_protocols(renderer):
 
 
 def test_as_ui_surface_passes_a_tui_renderer_through(renderer):
-    assert as_ui_surface(renderer, None, None) is renderer
+    assert as_ui_surface(renderer) is renderer
 
 
 def test_renderer_exposes_its_dimensions_in_cells(renderer):

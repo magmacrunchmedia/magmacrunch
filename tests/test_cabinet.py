@@ -979,3 +979,138 @@ def test_the_empty_floor_still_clears_the_footer_at_the_smallest_size():
         f"the empty floor reaches row {last_row} and the footer starts at "
         f"{first_footer_row} in a {theme.MIN_COLS}x{theme.MIN_ROWS} terminal"
     )
+
+
+# ── The high score on the card ──────────────────────────────────────
+
+
+def score_file(directory, key, *scores):
+    """Seed a scoreboard the way a cabinet would have left one."""
+    import json
+
+    path = directory / "scores" / f"{key}.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps([{"initials": "ABC", "score": s} for s in sorted(scores, reverse=True)]),
+        encoding="utf-8",
+    )
+    return path
+
+
+def test_a_card_shows_what_the_cabinet_was_last_beaten_at(isolated_scores):
+    score_file(isolated_scores, "alpha", 1200, 900)
+    app = arcade(FakeGame(key="alpha", title="Alpha Cabinet"))
+
+    async def go():
+        async with await _piloted(app) as pilot:
+            await pilot.pause()
+            await asyncio.sleep(0.25)
+            assert "BEST 1,200" in buffer_text(app)
+            app.host.quit()
+
+    run(go())
+
+
+def test_a_cabinet_nobody_has_played_says_nothing(isolated_scores):
+    """Zero is not a low score, it is no score. A card reading BEST 0 invites
+    somebody to beat it, which is not a thing that can be done."""
+    app = arcade(FakeGame(key="alpha", title="Alpha Cabinet"))
+
+    async def go():
+        async with await _piloted(app) as pilot:
+            await pilot.pause()
+            await asyncio.sleep(0.25)
+            assert "BEST" not in buffer_text(app)
+            app.host.quit()
+
+    run(go())
+
+
+def test_the_score_follows_the_scoreboard_key_not_the_menu_key(isolated_scores):
+    """A game whose two names differ still finds its board.
+
+    magmacrunch-thld is seated as `thld` and scores as `solitaire-thld`.
+    Reading `info.key` would look up an empty board and show nothing, forever,
+    with no symptom - an unfound scoreboard and an unplayed game look alike.
+    """
+    score_file(isolated_scores, "solitaire-thld", 4242)
+    game = FakeGame(key="thld", title="Lava Dome")
+    game.info = GameInfo(key="thld", title="Lava Dome", blurb="Solo hold'em.",
+                         score_key="solitaire-thld")
+    app = arcade(game)
+
+    async def go():
+        async with await _piloted(app) as pilot:
+            await pilot.pause()
+            await asyncio.sleep(0.25)
+            assert "BEST 4,242" in buffer_text(app)
+            app.host.quit()
+
+    run(go())
+
+
+def test_a_score_set_in_a_cabinet_is_on_the_card_when_you_come_back(isolated_scores):
+    """The one moment the number can change is the one moment it is re-read."""
+    game = FakeGame(key="alpha", title="Alpha Cabinet")
+    app = arcade(game)
+    assert app.best_for(game) == 0
+
+    app.host.scene.handle_key("enter")
+    settle(app)
+    # What the cabinet did while it had the terminal.
+    score_file(isolated_scores, "alpha", 7777)
+
+    app.host.pop_scene()
+    settle(app)
+    assert app.best_for(game) == 7777
+
+
+def test_the_floor_does_not_read_the_disk_every_frame(isolated_scores, monkeypatch):
+    """20 fps times one file open per card is not a way to show a number that
+    changes once a visit."""
+    from magmacrunch.engine import scores as scores_module
+
+    app = arcade(FakeGame(key="alpha", title="Alpha Cabinet"))
+
+    reads = []
+    original = scores_module.ScoreBook.best
+    monkeypatch.setattr(scores_module.ScoreBook, "best",
+                        lambda self: reads.append(self.game) or original(self))
+
+    scene = app.host.scene
+    for _ in range(50):
+        scene.update(0.05)
+        scene.render()
+    assert reads == []
+
+
+def test_an_unreadable_scoreboard_costs_that_card_its_number_and_nothing_else(
+        isolated_scores, monkeypatch):
+    """A game is a third party. The floor still has to draw."""
+    from magmacrunch.engine import scores as scores_module
+
+    def explode(self):
+        raise RuntimeError("scoreboard on fire")
+
+    monkeypatch.setattr(scores_module.ScoreBook, "best", explode)
+    app = arcade(FakeGame(key="alpha", title="Alpha Cabinet"))
+
+    async def go():
+        async with await _piloted(app) as pilot:
+            await pilot.pause()
+            await asyncio.sleep(0.25)
+            text = buffer_text(app)
+            assert "Alpha Cabinet" in text
+            assert "BEST" not in text
+            app.host.quit()
+
+    run(go())
+
+
+def test_the_number_never_pushes_enter_off_the_card(isolated_scores):
+    """ENTER starts the game and the score is decoration. On a card too narrow
+    for both, the number is what goes."""
+    assert cards.best_label(0) == ""
+    assert cards.best_label(1200) == "BEST 1,200"
+    # Seven figures still fit a 32-column card beside the ENTER line.
+    assert len(theme.PLAY) + 1 + len(cards.best_label(9_999_999)) <= theme.CARD_INNER

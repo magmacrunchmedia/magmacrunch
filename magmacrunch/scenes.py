@@ -137,10 +137,13 @@ class CabinetScene:
         game = self.highlighted
         if game is None or not self._enabled(game):
             return
-        if not self.app.play(game):
-            # Nothing was pushed, so nothing will pop and no on_resume will
-            # fire. The error is drawn on the floor instead.
-            pass
+        # The return value is deliberately dropped. A cabinet that will not
+        # start pushes nothing, so nothing pops and no `on_resume` fires -
+        # there is no state here to unwind, and `ArcadeApp.play` has already
+        # put the reason in `app.error` for the footer to draw. This used to
+        # be an `if` with a comment for a body, which reads as an unfinished
+        # branch rather than a considered one.
+        self.app.play(game)
 
     # -- Stack hooks -------------------------------------------------
 
@@ -156,8 +159,15 @@ class CabinetScene:
         Retuning here rather than in the host is deliberate: the host cannot
         know what to revert *to*. Only whatever is underneath does, and that
         is this.
+
+        Scores are re-read for a related reason. A cabinet writes its
+        scoreboard while it is running, and this is the frame after it stopped
+        - so it is both the first moment the new number exists and the last
+        moment before it would be drawn stale. A player who has just set a
+        high score sees it on the card they came back to.
         """
         self.app.host.apply(self.app.info)
+        self.app.refresh_scores()
 
     # -- Frame -------------------------------------------------------
 
@@ -233,6 +243,7 @@ class CabinetScene:
                 selected=slot.index == self.selected,
                 enabled=self._enabled(game),
                 cursor=cursor,
+                best=self.app.best_for(game),
             )
 
         total = cards.pages(len(self.app.games), width, height)

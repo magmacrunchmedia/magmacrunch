@@ -2,8 +2,14 @@
 # Copyright 2026 magmacrunch media
 """Textual host for the engine — the terminal counterpart to :class:`Game`.
 
-This is the only module in the engine that imports Textual, and it is imported
-lazily (see :mod:`magmacrunch.engine.core`). Textual is a hard dependency here
+This is the only module in the engine that imports Textual, and nothing
+imports *it* until a terminal is actually wanted. There is no lazy-import
+machinery to point at: the sub-package ``__init__`` files are empty and
+``magmacrunch.engine`` re-exports nothing, precisely so that importing a name
+from the engine cannot drag Textual in behind it. What defers the cost is the
+callers — see the function-level import in :func:`magmacrunch.__main__.main`.
+
+Textual is a hard dependency here
 rather than the optional extra it was in texastoast, so the laziness is no
 longer about whether it is installed — it is about *when* it starts. Printing
 ``magmacrunch --list`` should not have to boot a terminal framework, and the

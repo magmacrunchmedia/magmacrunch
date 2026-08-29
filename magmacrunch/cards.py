@@ -119,13 +119,30 @@ def _wrap(text: str, width: int, limit: int) -> list[str]:
     return kept
 
 
+def best_label(score: int) -> str:
+    """``BEST 12,345``, or empty for a game nobody has played here.
+
+    Grouped with commas because a scoreboard is read at a glance and six
+    unbroken digits are not. Zero is not a low score, it is no score - see
+    :meth:`magmacrunch.app.ArcadeApp.refresh_scores`.
+    """
+    return f"BEST {score:,}" if score > 0 else ""
+
+
 def draw(renderer, slot: Slot, info, *, accent: str, selected: bool,
-         enabled: bool, cursor: bool) -> None:
+         enabled: bool, cursor: bool, best: int = 0) -> None:
     """One card.
 
     ``cursor`` is the blinking underscore after ENTER, which the web page
     shows only under the pointer (``.card-arrow`` is ``opacity: 0`` until
     ``:hover``). Here that is the selected card, blinking on the frame clock.
+
+    ``best`` is this game's high score, drawn at the right of the ENTER line.
+    It shares that row rather than taking one of its own because the card is
+    nine rows and a two-line title with a three-line blurb already fills it -
+    a sixth row of text would push the ENTER line onto the border. Defaulted
+    so that every existing caller keeps working and a game with no scoreboard
+    costs nothing.
     """
     x, y, w, h = slot.x, slot.y, theme.CARD_W, theme.CARD_H
     border = accent if selected else theme.CARD_BORDER
@@ -167,8 +184,33 @@ def draw(renderer, slot: Slot, info, *, accent: str, selected: bool,
         play = theme.PLAY + ("_" if cursor and selected else "")
         renderer.ui_text(left, play_y, play,
                          fill=accent if selected else theme.MUTED)
+        _draw_best(renderer, left, play_y, inner, len(play), best)
     else:
         renderer.ui_text(left, play_y, "TOO BIG", fill=theme.CARD_BORDER)
 
 
-__all__ = ["Slot", "columns", "draw", "layout", "page_start", "pages", "rows"]
+def _draw_best(renderer, left: int, row: int, inner: int, used: int,
+               best: int) -> None:
+    """The high score, right-aligned on the ENTER row.
+
+    Dropped rather than crowded when the two would touch: ENTER is how you
+    start the game and the score is decoration, so on a card too narrow for
+    both the number is what goes. In practice a 32-column card has room for
+    seven figures, and this only bites if ``CARD_W`` ever shrinks.
+
+    Yellow because that is the scoreboard colour on magmacrunch.com, and it is
+    the same on the selected card as on the others - the accent says which
+    card Enter would start, and a number that changed colour with the cursor
+    would be saying it too.
+    """
+    label = best_label(best)
+    if not label:
+        return
+    # One space of daylight between ENTER and the number, minimum.
+    if used + 1 + len(label) > inner:
+        return
+    renderer.ui_text(left + inner - len(label), row, label, fill=theme.YELLOW)
+
+
+__all__ = ["Slot", "best_label", "columns", "draw", "layout", "page_start",
+           "pages", "rows"]

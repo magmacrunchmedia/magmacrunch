@@ -16,10 +16,9 @@ class DialogueBox:
     render function. A renderer that clears the canvas each frame would
     otherwise wipe the box off screen while the box still believes it is up.
 
-    ``surface`` accepts any
-    :class:`~magmacrunch.engine.render.abstract.UISurface` — in which case
-    ``width``/``height`` default from it — or a bare ``tk.Canvas`` for
-    backward compatibility.
+    ``surface`` is any
+    :class:`~magmacrunch.engine.render.abstract.UISurface`, in which case
+    ``width``/``height`` default from it.
     """
 
     def __init__(
@@ -33,7 +32,7 @@ class DialogueBox:
         speed: float = 0.03,
         theme: Theme | None = None,
     ):
-        self._surface = as_ui_surface(surface, width, height)
+        self._surface = as_ui_surface(surface)
         self._width = width if width is not None else self._surface.width
         self._height = height if height is not None else self._surface.height
         self._box_height = box_height

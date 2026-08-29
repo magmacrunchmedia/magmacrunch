@@ -53,8 +53,12 @@ class GameInfo:
     the frame rate and input behaviour before handing over the terminal.
     """
 
-    #: Stable identifier — the entry point name, the leaderboard key, a
-    #: command-line argument. Kebab-case.
+    #: Stable identifier — the entry point name, a command-line argument, what
+    #: a launcher files this game under. Kebab-case.
+    #:
+    #: It is *usually* the scoreboard key too, which is why :attr:`score_key`
+    #: defaults to it. It is not always, so do not read this one for scores —
+    #: read :attr:`scoreboard`.
     key: str
     #: What the menu shows.
     title: str
@@ -92,8 +96,32 @@ class GameInfo:
     min_cols: int = 60
     min_rows: int = 20
 
+    #: Where this game's scores are filed, when that is not :attr:`key`.
+    #:
+    #: Empty means "the same", which is the common case and why this can be
+    #: left alone. Set it when a game's scoreboard is named for something
+    #: other than its entry point — usually because the browser build got
+    #: there first and a shared board later has to mean a *shared* board, not
+    #: two boards with different names. `magmacrunch-thld` is the worked
+    #: example: it is seated as ``thld`` and scores as ``solitaire-thld``.
+    #:
+    #: Read :attr:`scoreboard`, never this.
+    score_key: str = ""
+
     def fits(self, cols: int, rows: int) -> bool:
         return cols >= self.min_cols and rows >= self.min_rows
+
+    @property
+    def scoreboard(self) -> str:
+        """The key to open a :class:`~magmacrunch.engine.scores.ScoreBook` with.
+
+        The one thing a launcher should ever use to find this game's scores.
+        Going through here rather than reading :attr:`key` directly is what
+        keeps a game whose two names differ from silently showing an empty
+        board forever — the failure has no symptom, because an unfound
+        scoreboard and an unplayed game look exactly alike.
+        """
+        return self.score_key or self.key
 
 
 @runtime_checkable
