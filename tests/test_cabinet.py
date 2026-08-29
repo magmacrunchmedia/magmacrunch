@@ -800,6 +800,7 @@ def test_a_blurb_full_of_glyphs_does_not_kill_the_listing(tmp_path):
     """Titles and blurbs are written by whoever wrote the game. Redirected to
     a file on a legacy Windows codepage, a card glyph is a UnicodeEncodeError
     - and a diagnostic that dies on what it is diagnosing is useless."""
+    import os
     import subprocess
     import sys
 
@@ -817,11 +818,18 @@ def test_a_blurb_full_of_glyphs_does_not_kill_the_listing(tmp_path):
     # Decoding its bytes as UTF-8 blows up on the em-dash (0x97) — which is a
     # failure of this test, not of the thing it is testing, and one that hides
     # on a Windows box whose own default happens to be cp1252.
+    # Inherit the environment rather than replacing it. A child handed only
+    # those two names cannot start at all on Windows before 3.11, where seeding
+    # hash randomisation goes through an API that wants SystemRoot: the process
+    # dies in preinit with "failed to get random numbers" and this test reports
+    # it as a listing failure, which is a lie about what broke. PYTHONUTF8 is
+    # pinned off because an inherited UTF-8 mode would quietly undo the very
+    # codepage the test exists to reproduce.
     out = subprocess.run(
         [sys.executable, str(script)],
         capture_output=True, text=True,
         encoding="cp1252", errors="replace",
-        env={"PYTHONIOENCODING": "cp1252:strict", "PATH": ""},
+        env={**os.environ, "PYTHONIOENCODING": "cp1252:strict", "PYTHONUTF8": "0"},
     )
     assert out.returncode == 0, out.stderr
     assert "Deck" in out.stdout
