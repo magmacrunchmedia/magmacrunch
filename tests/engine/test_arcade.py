@@ -83,6 +83,20 @@ def test_fits_reports_whether_a_terminal_is_big_enough():
     assert not i.fits(58, 21)
 
 
+def test_a_cabinet_need_not_name_a_colour():
+    # Empty means "you choose", so a launcher must have a fallback. Same
+    # arrangement score_key has, and for the same reason: a cabinet built
+    # against an engine that predates the field never sets it.
+    assert GameInfo(key="x", title="X", blurb="b").accent == ""
+
+
+def test_a_cabinet_can_name_a_colour():
+    # It lives here rather than in a table inside the launcher because a
+    # launcher that knew the colours of specific games would be a launcher
+    # that knows about specific games.
+    assert info(accent="#39ff6e").accent == "#39ff6e"
+
+
 def test_game_info_is_frozen():
     # A launcher reads it repeatedly and must not be able to edit a game's
     # declaration by accident.

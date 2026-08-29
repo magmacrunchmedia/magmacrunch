@@ -17,6 +17,8 @@ Every measurement is **cells**, not pixels.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 TAGLINE = "EVERY CABINET ON THIS MACHINE"
 INSERT_COIN = "INSERT COIN"
 
@@ -51,6 +53,59 @@ ACCENTS = (CYAN, GREEN, AMBER, PINK)
 
 def accent(index: int) -> str:
     return ACCENTS[index % len(ACCENTS)]
+
+
+def accent_for(info, index: int) -> str:
+    """The colour a cabinet is drawn in.
+
+    Its own if it declares one — see :attr:`magmacrunch.engine.arcade.GameInfo.accent`
+    — and otherwise the cycled position colour, which is what every cabinet got
+    before any of them could say. A game built against an older engine has no
+    ``accent`` attribute at all, so this asks rather than reads: the launcher
+    finds cabinets by entry point and has no say in which engine they were
+    built against.
+    """
+    return getattr(info, "accent", "") or accent(index)
+
+
+#: How far a cabinet's accent is pulled toward the background for the roles
+#: that are not the accent itself. The floor keeps :data:`BG` — repainting the
+#: whole room on every arrow keypress strobes — so the retint is carried by the
+#: title, the tagline and the help line, which is where the web page carries it
+#: too (``.game-card:hover`` recolours the card and its border, not the body).
+_TAGLINE_MIX = 0.35
+_HELP_MIX = 0.60
+
+
+def _mix(a: str, b: str, t: float) -> str:
+    """``a`` moved ``t`` of the way toward ``b``."""
+    ca = [int(a[i:i + 2], 16) for i in (1, 3, 5)]
+    cb = [int(b[i:i + 2], 16) for i in (1, 3, 5)]
+    return "#{:02x}{:02x}{:02x}".format(
+        *(round(x + (y - x) * t) for x, y in zip(ca, cb, strict=True))
+    )
+
+
+@dataclass(frozen=True)
+class Floor:
+    """The arcade floor, in one cabinet's colour.
+
+    Three roles derived from one hex rather than six declared per cabinet: a
+    cabinet should have to name one colour to be at home here, not fill in a
+    stylesheet. Built by :func:`floor`.
+    """
+
+    accent: str
+    tagline: str
+    help: str
+
+
+def floor(colour: str) -> Floor:
+    return Floor(
+        accent=colour,
+        tagline=_mix(colour, BG, _TAGLINE_MIX),
+        help=_mix(colour, BG, _HELP_MIX),
+    )
 
 
 # ── Cards ───────────────────────────────────────────────────────────

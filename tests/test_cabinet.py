@@ -42,10 +42,10 @@ class FakeGame:
     """A cabinet that starts, and remembers how often it was asked to."""
 
     def __init__(self, key="fake", title="Fake Cabinet", blurb="A fake.",
-                 fps=20, hold_ms=0, min_cols=40, min_rows=12):
+                 fps=20, hold_ms=0, min_cols=40, min_rows=12, accent=""):
         self.info = GameInfo(key=key, title=title, blurb=blurb, fps=fps,
                              hold_ms=hold_ms, min_cols=min_cols,
-                             min_rows=min_rows)
+                             min_rows=min_rows, accent=accent)
         self.starts = 0
 
     def start(self, host):
@@ -700,7 +700,15 @@ def test_an_empty_floor_is_signed_too():
 
 
 def test_the_floor_is_painted_in_the_web_arcades_palette():
+    """The banner and the tagline come from the selected cabinet now.
+
+    Not from a constant: the floor takes the colour of whatever you are
+    standing in front of. With nothing declared that is still the cycled
+    position colour, so the first cabinet's floor is the cyan it always was —
+    what changed is where the colour comes from, not what it is here.
+    """
     app = two_cabinets()
+    floor = theme.floor(theme.accent(0))
 
     async def go():
         async with await _piloted(app) as pilot:
@@ -708,12 +716,69 @@ def test_the_floor_is_painted_in_the_web_arcades_palette():
             await asyncio.sleep(0.25)
             used = colours(app)
             assert theme.CYAN in used, "banner"
-            assert theme.PINK in used, "tagline"
+            assert floor.accent == theme.CYAN
+            assert floor.tagline in used, "tagline"
             assert theme.CARD_TITLE in used, "card titles"
             assert theme.MUTED in used, "card blurbs"
             app.host.quit()
 
     run(go())
+
+
+def test_the_floor_retints_as_the_selection_moves():
+    """The arcade's version of what a cabinet does inside itself.
+
+    george-boole dresses every bit mode as a different console; the menu that
+    seats it should not be the one screen that stays the same no matter what
+    is highlighted.
+    """
+    app = arcade(
+        FakeGame(key="alpha", title="Alpha", blurb="One.", accent="#39ff6e"),
+        FakeGame(key="beta", title="Beta", blurb="Two.", accent="#ff2e9c"),
+    )
+    scene = app.host.scene
+
+    async def go():
+        async with await _piloted(app) as pilot:
+            await pilot.pause()
+            await asyncio.sleep(0.25)
+            assert scene._floor().accent == "#39ff6e"
+            assert "#39ff6e" in colours(app), "banner in the first accent"
+
+            # Right, not down: two cabinets sit side by side in the grid.
+            scene.handle_key("right")
+            await asyncio.sleep(0.25)
+            assert scene._floor().accent == "#ff2e9c"
+            assert "#ff2e9c" in colours(app), "banner in the second accent"
+            app.host.quit()
+
+    run(go())
+
+
+def test_a_cabinet_that_declares_no_colour_keeps_its_position_one():
+    """The fallback that lets an older cabinet stay unbroken.
+
+    ``GameInfo.accent`` is new, and a game built against an engine that
+    predates it does not set it. That must look deliberate rather than
+    broken, which is the same arrangement ``score_key`` has.
+    """
+    app = two_cabinets()
+    scene = app.host.scene
+    assert not app.games[0].info.accent
+    assert scene._accent(0) == theme.accent(0)
+    assert scene._accent(1) == theme.accent(1)
+
+
+def test_a_declared_colour_wins_over_the_position_one():
+    app = arcade(FakeGame(key="alpha", accent="#abcdef"))
+    assert app.host.scene._accent(0) == "#abcdef"
+
+
+def test_an_empty_floor_still_has_a_colour():
+    # Nothing to take one from, and a crash here would be a screen that only
+    # appears on a machine with no cabinets installed — the least tested one.
+    app = arcade()
+    assert app.host.scene._floor().accent == theme.CYAN
 
 
 def test_the_selected_card_wears_its_accent_and_the_others_do_not():

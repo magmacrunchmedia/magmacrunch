@@ -205,25 +205,45 @@ class CabinetScene:
             return
 
         cx = r.width // 2
-        y = self._render_header(r, cx)
+        floor = self._floor()
+        y = self._render_header(r, cx, floor)
 
         if self.app.games:
             self._render_grid(r, y)
         else:
             self._render_empty_floor(r, cx, y)
 
-        self._render_footer(r, cx)
+        self._render_footer(r, cx, floor)
         r.present()
 
-    def _render_header(self, r, cx: int) -> int:
+    def _accent(self, index: int) -> str:
+        """The colour of the cabinet in slot ``index``."""
+        return theme.accent_for(self.app.games[index].info, index)
+
+    def _floor(self) -> theme.Floor:
+        """The floor, in the selected cabinet's colour.
+
+        The room takes the colour of whatever you are standing in front of,
+        which is the arcade's version of what each game does inside itself —
+        george-boole dresses every bit mode as a different console, and the
+        menu that seats it should not be the one screen that stays the same
+        no matter what is highlighted.
+
+        An empty floor has nothing to take a colour from and keeps cyan.
+        """
+        if not self.app.games:
+            return theme.floor(theme.CYAN)
+        return theme.floor(self._accent(self.selected))
+
+    def _render_header(self, r, cx: int, floor: theme.Floor) -> int:
         """Banner, tagline and coin. Returns the first row below them."""
         y = 0
         art = banner.best_fit(r.width - 2, self._banner_budget())
         for line in art:
-            r.ui_text(cx, y, line, fill=theme.CYAN, anchor="n")
+            r.ui_text(cx, y, line, fill=floor.accent, anchor="n")
             y += 1
 
-        r.ui_text(cx, y, theme.TAGLINE, fill=theme.PINK, anchor="n")
+        r.ui_text(cx, y, theme.TAGLINE, fill=floor.tagline, anchor="n")
         y += 1
         if self._blink(theme.COIN_BLINK_SECONDS):
             r.ui_text(cx, y, theme.INSERT_COIN, fill=theme.YELLOW, anchor="n")
@@ -239,7 +259,7 @@ class CabinetScene:
             game = self.app.games[slot.index]
             cards.draw(
                 r, cards.Slot(slot.index, slot.x, slot.y + top), game.info,
-                accent=theme.accent(slot.index),
+                accent=self._accent(slot.index),
                 selected=slot.index == self.selected,
                 enabled=self._enabled(game),
                 cursor=cursor,
@@ -256,12 +276,12 @@ class CabinetScene:
             r.ui_text(r.width // 2, below, f"PAGE {here}/{total}",
                       fill=theme.MUTED, anchor="n")
 
-    def _render_footer(self, r, cx: int) -> None:
+    def _render_footer(self, r, cx: int, floor: theme.Floor) -> None:
         if self.app.error:
             r.ui_text(cx, r.height - 4, _fit(self.app.error, r.width - 2),
                       fill=theme.ERROR, anchor="n")
         r.ui_text(cx, r.height - 3, _fit(MENU_HELP, r.width - 2),
-                  fill=theme.MUTED, anchor="n")
+                  fill=floor.help, anchor="n")
         self._render_credits(r, cx)
 
     def _render_credits(self, r, cx: int) -> None:

@@ -108,6 +108,20 @@ class GameInfo:
     #: Read :attr:`scoreboard`, never this.
     score_key: str = ""
 
+    #: The colour this cabinet is known by, as ``#rrggbb``.
+    #:
+    #: Empty means "you choose", and a launcher is expected to have a fallback
+    #: — the same arrangement :attr:`score_key` has, and for the same reason: a
+    #: cabinet built against an older engine never sets this, and must not
+    #: therefore look broken.
+    #:
+    #: It is here rather than in a table inside the launcher because a launcher
+    #: that knew the colours of specific games would be a launcher that knows
+    #: about specific games, which is the one thing this module exists to
+    #: prevent. A cabinet brings its own; anything installed later brings its
+    #: own too, without a release here.
+    accent: str = ""
+
     def fits(self, cols: int, rows: int) -> bool:
         return cols >= self.min_cols and rows >= self.min_rows
 

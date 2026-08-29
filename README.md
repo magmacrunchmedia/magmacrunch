@@ -126,6 +126,13 @@ choose its font. Pixel lettering has to be *drawn*, out of block glyphs, which
 is what the narrow title variant does — and what the web page's own title art
 does too, in Courier Prime rather than Press Start 2P, for the same reason.
 
+The floor takes the colour of whichever cabinet is highlighted: the title, the
+tagline and the key line all shift as you arrow across the grid, the way
+`.game-card:hover` recolours a card and its border on the web page. A cabinet
+names its own colour through `GameInfo.accent`, and one that names none — a
+cabinet built against an older engine, or one that simply does not care — gets
+the cycled position colour it always had.
+
 The title art stands down as the window grows or shrinks, and always before
 the cabinets have to — which is what keeps the floor as low as it is:
 
