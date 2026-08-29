@@ -5,63 +5,98 @@ machine, and a way into one.
 
 ## Install
 
-**The quickest way in, on any platform, is not to install it at all:**
+Every package in the stack is a pure-Python `py3-none-any` wheel, so there is
+nothing to compile on macOS, Linux or Windows. What differs between the three is
+not the build, it is which installer you already have — so that is what this
+table is keyed on, rather than on the operating system:
 
-```
-uvx magmacrunch
-```
+| you already have | run | |
+|---|---|---|
+| `uv` | `uvx magmacrunch` | nothing lands on your PATH |
+| `pipx` | `pipx run magmacrunch` | the same trick |
+| Python 3.10+, and nothing else | `pip install magmacrunch` | the command, kept |
+| Homebrew (macOS, Linux) | `brew install magmacrunchmedia/tap/magmacrunch` | brew owns it |
+| none of these | install uv, below — it brings its own Python | |
 
-[uv](https://docs.astral.sh/uv/) pulls the arcade and its cabinets into a
-throwaway environment and starts them. Nothing lands on your PATH, nothing can
-collide with anything, and it behaves the same on macOS, Linux and Windows —
-every package in the stack is a pure-Python `py3-none-any` wheel, so there is
-nothing to compile on any of them. `pipx run magmacrunch` is the same trick if
-you already have pipx.
-
-To keep the command around afterwards:
+The first two run the arcade out of a throwaway environment: nothing reaches
+your PATH, and nothing can collide with anything. To keep the command around
+instead:
 
 ```
 uv tool install magmacrunch
+pipx install magmacrunch
 ```
 
-`pipx install magmacrunch` does the same job. Either one puts `magmacrunch` —
-and each cabinet's own command — on your PATH inside an isolated virtualenv.
+Either one puts `magmacrunch` — and each cabinet's own command — on your PATH
+inside an isolated virtualenv. Whichever route you take, that one install brings
+the arcade and all three cabinets.
 
-| you want | run |
+### Getting uv
+
+`uvx` is the shortest way in *if you have uv*, and no shorter than `pip` if you
+do not — so it is worth saying how to get it rather than assuming it is there:
+
+| | |
 |---|---|
-| to just play, right now | `uvx magmacrunch` |
-| the command, kept | `uv tool install magmacrunch` |
-| the command, and you have pipx | `pipx install magmacrunch` |
-| Homebrew to own it (macOS, Linux) | `brew install magmacrunchmedia/tap/magmacrunch` |
+| macOS, Linux | `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
+| Windows | `winget install --id=astral-sh.uv -e` |
 
-That one install brings the arcade and all three cabinets.
+Where winget is unavailable, uv's own installer is `powershell -ExecutionPolicy
+ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"`. `brew install uv` and
+`pipx install uv` work too.
 
 ### If you reached for pip
 
-`pip install magmacrunch` is not wrong, but on its own it is the one route that
-regularly installs successfully and then appears to have done nothing. Three
-ways that happens, all of them recoverable:
+`pip install magmacrunch` is not wrong. Whether it is the *awkward* route
+depends on the machine, and the ways it goes quiet are not the same on all of
+them.
 
-- **`error: externally-managed-environment`.** Homebrew and most current Python
-  builds refuse to install into the system Python. That is pip working
-  correctly, not a broken package. Use `uv`, `pipx`, or a virtualenv.
-- **It installed, but the command is not on your PATH.** `pip` only reaches
-  your PATH from an activated virtualenv or with `--user`. Run against a system
-  Python, the arcade is on disk and unreachable.
-- **You installed it from inside IPython or a notebook.** It went into whatever
-  environment that kernel runs on, which is usually not the one your shell
-  reaches.
+**On Windows it is usually the shortest route, not the risky one.** The
+python.org installer's **Add python.exe to PATH** checkbox puts `Scripts\` on
+your PATH, and the console script lands in it — so a plain `pip install
+magmacrunch`, with no virtualenv and no `--user`, leaves you with a working
+`magmacrunch` command.
 
-In all three the arcade is already installed, and this starts it, PATH or no
-PATH:
+What does bite on Windows is that **`python3` is usually not Python.** Windows
+ships an app-execution alias of that name pointing at the Microsoft Store, so
 
 ```
 python3 -m magmacrunch
 ```
 
-One more, because it costs people five minutes: `magmacrunch` is a **shell**
-command. Typing it at a `>>>` prompt is only ever a `NameError` — leave Python
-first.
+answers `Python was not found; run without arguments to install from the
+Microsoft Store` on a machine that has Python and has the arcade installed in
+it. Use the launcher instead:
+
+```
+py -m magmacrunch
+```
+
+`python -m magmacrunch` does the same. If the arcade really is unreachable, the
+PATH checkbox was most likely skipped at install time — `py` finds it either
+way, and the installer's *Modify* can add it afterwards.
+
+**On macOS and Linux** pip is the route that regularly installs successfully and
+then appears to have done nothing. Two ways that happens:
+
+- **`error: externally-managed-environment`.** Homebrew and Debian-family
+  Pythons refuse to install into the system Python. That is pip working
+  correctly, not a broken package. Use `uv`, `pipx`, or a virtualenv.
+- **It installed, but the command is not on your PATH.** `pip` reaches your PATH
+  only from an activated virtualenv, or with `--user` and `~/.local/bin` on
+  PATH. Run against a system Python, the arcade is on disk and unreachable.
+
+Both of those end at `python3 -m magmacrunch`, which does not care about PATH —
+and which, on those two platforms, is a real interpreter rather than a Store
+shortcut.
+
+**Either way**, two more that cost people time:
+
+- If you installed from inside IPython or a notebook, it went into whatever
+  environment that kernel runs on, which is usually not the one your shell
+  reaches.
+- `magmacrunch` is a **shell** command. Typing it at a `>>>` prompt is only ever
+  a `NameError` — leave Python first.
 
 ## Playing
 
