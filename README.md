@@ -80,6 +80,12 @@ On the arcade floor, `←→` move between cabinets, `↑↓` move a row, `Enter
 plays and `Q` quits. **`Esc` inside a game returns to the arcade**, not to the
 shell — which is the whole reason the host exists.
 
+A cabinet says so on its own title screen, and only when the arcade started
+it: the same key ends the session when the game was launched as its own
+command, so a hint printed unconditionally would be a lie half the time.
+Games ask `Host.seated` to tell the two apart, and nothing else about them
+changes — see `magmacrunch.engine.arcade`.
+
 ```
                                                                      __
     .--------.---.-.-----.--------.---.-.----.----.--.--.-----.----.|  |--.

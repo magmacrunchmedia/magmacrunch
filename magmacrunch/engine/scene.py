@@ -139,6 +139,22 @@ class SceneStack:
     def __bool__(self) -> bool:
         return bool(self._scenes)
 
+    @property
+    def occupied(self) -> bool:
+        """Whether anything is here, counting a push queued this frame.
+
+        :meth:`__len__` and :meth:`__bool__` report what has been *applied*, and
+        operations are deferred to the next :meth:`update` — so a caller asking
+        "is there already a scene here" in the same frame as the push that put
+        one there gets told no.
+
+        That distinction only matters to someone deciding what is underneath
+        something about to go on top. For everything else the applied view is
+        the right one, which is why this is separate rather than a change to
+        ``len``.
+        """
+        return bool(self._scenes) or any(op == "push" for op, _ in self._pending)
+
     def __contains__(self, scene) -> bool:
         return any(s is scene for s in self._scenes)
 

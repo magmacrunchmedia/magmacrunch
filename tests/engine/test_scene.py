@@ -286,3 +286,29 @@ def test_top_scenes_len_bool_contains():
 
 def test_recorder_satisfies_scene_protocol():
     assert isinstance(Recorder([], "x"), Scene)
+
+
+def test_occupied_counts_a_push_that_has_not_applied_yet():
+    # len() and bool() report the applied stack; operations land on the next
+    # update. Anyone asking "is there something under what I am about to put
+    # on top" needs the pending push counted, or a menu pushed and a game
+    # seated in the same frame looks like a game with nothing underneath.
+    stack = SceneStack()
+    assert stack.occupied is False
+
+    stack.push(Recorder([], "floor"))
+    assert len(stack) == 0          # not applied
+    assert stack.occupied is True   # but it is going to be
+
+    stack.update(0)
+    assert len(stack) == 1
+    assert stack.occupied is True
+
+
+def test_occupied_is_false_once_everything_has_been_popped():
+    stack = SceneStack()
+    stack.push(Recorder([], "floor"))
+    stack.update(0)
+    stack.pop()
+    stack.update(0)
+    assert stack.occupied is False

@@ -226,3 +226,49 @@ def test_a_second_game_can_be_seated_over_the_first(host):
 
 def test_the_demo_game_is_a_valid_arcade_game():
     assert isinstance(Game(), ArcadeGame)
+
+
+# ── Seated or launched ──────────────────────────────────────────────
+
+
+def test_a_fresh_host_has_not_seated_anything(host):
+    assert host.seated is False
+
+
+def test_a_game_seated_over_a_menu_knows_it(host):
+    host.push_scene(Scene())          # whatever the launcher had showing
+    host.seat(Game())
+    assert host.seated is True
+
+
+def test_a_game_seated_onto_an_empty_stack_was_launched_not_seated(host):
+    # `for_game` does exactly this, and it is how a cabinet runs as its own
+    # command. Nothing is underneath, so there is nowhere to go back to.
+    host.seat(Game())
+    assert host.seated is False
+
+
+def test_for_game_is_a_launch(host):  # noqa: ARG001
+    assert TuiHost.for_game(Game()).seated is False
+
+
+def test_a_game_pushing_its_own_screens_does_not_become_seated(host):
+    # The trap a live `len(stack) > 1` would fall into: a launched game opening
+    # a second screen would start claiming there was an arcade underneath it.
+    host.seat(Game())
+    host.push_scene(Scene())
+    host.push_scene(Scene())
+    assert host.seated is False
+
+
+def test_seating_a_second_game_answers_for_that_one(host):
+    host.seat(Game())                 # launched: nothing underneath
+    assert host.seated is False
+    host.push_scene(Scene())
+    host.seat(Game())                 # and now over something
+    assert host.seated is True
+
+
+def test_seated_is_read_only(host):
+    with pytest.raises(AttributeError):
+        host.seated = True

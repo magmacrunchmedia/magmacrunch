@@ -43,6 +43,7 @@ class TuiHost:
                              input_source=TuiInput(hold_ms=hold_ms),
                              **game_kwargs)
         self._stack = SceneStack()
+        self._seated = False
         self._game.set_update(self._update)
         self._game.set_render(self._stack.render)
 
@@ -71,6 +72,17 @@ class TuiHost:
     @property
     def input(self):
         return self._game.input
+
+    @property
+    def seated(self) -> bool:
+        """Whether the last game seated here was put over something else.
+
+        Describes that game, for as long as it is the one running — which is
+        the whole window in which anything asks. It is not reset when a cabinet
+        leaves, so a launcher's own floor must not read it to describe itself;
+        the floor knows it is the floor.
+        """
+        return self._seated
 
     def push_scene(self, scene: Any) -> None:
         self._stack.push(scene)
@@ -108,6 +120,21 @@ class TuiHost:
         input and hand over to something wanting 30 and held keys, and the
         game should not have to know it was seated rather than launched.
         """
+        # Read before anything is pushed, and not recomputed afterwards.
+        #
+        # The question is "was this game placed over something else", which is
+        # the same question as "is there anywhere for it to go back to" — and
+        # it is only answerable now. A live `len(self._stack) > 1` would say
+        # False here and True the moment the game opened a screen of its own.
+        #
+        # Note this is not "was seat() called": `for_game` seats a game onto an
+        # empty stack, which is how a cabinet runs as its own command, and that
+        # is a launch and not a seating.
+        #
+        # `occupied` rather than `len`, because stack operations apply on the
+        # next frame: a launcher that pushed its menu and seated a cabinet in
+        # one go would otherwise be told there was nothing underneath.
+        self._seated = self._stack.occupied
         self.apply(game.info)
         scene = game.start(self)
         self.push_scene(scene)

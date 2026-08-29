@@ -37,6 +37,7 @@ class FakeGame:
 class FakeHost:
     renderer = object()
     input = object()
+    seated = False
 
     def __init__(self):
         self.pushed = []

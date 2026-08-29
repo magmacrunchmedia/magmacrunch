@@ -102,6 +102,10 @@ class Host(Protocol):
     and a way to say it is finished — everything else is the game's own
     business, and a wider protocol would be a wider thing for a second host to
     have to implement.
+
+    :attr:`seated` is the one addition to that list, and it is here because it
+    is the only thing in this list a game cannot work out for itself. Everything
+    else it needs, it owns.
     """
 
     @property
@@ -115,6 +119,23 @@ class Host(Protocol):
 
         Poll it for held state. Discrete keys arrive at the top scene's
         ``handle_key`` instead, which is what a turn-based game should use.
+        """
+        ...
+
+    @property
+    def seated(self) -> bool:
+        """Whether this game was placed over something else.
+
+        **For labelling, and for nothing else.** :meth:`pop_scene` already does
+        the right thing in both situations without being told which one it is
+        in, and that should stay true — a game that branches its *behaviour* on
+        this has reintroduced the flag the stack exists to avoid.
+
+        What it cannot do without asking is describe the key. Esc at a game's
+        top menu means "back to the arcade" when seated and "quit" when the
+        game was launched on its own, and a hint that has to be right in both
+        places can only say one of them. Left unsaid, as it was until this
+        existed, a player has no way to discover the route back at all.
         """
         ...
 
