@@ -5,21 +5,63 @@ machine, and a way into one.
 
 ## Install
 
-**pipx is the right tool here.** It puts the commands on your PATH in an
-isolated virtualenv, so an arcade cannot collide with anything else you have
-installed:
+**The quickest way in, on any platform, is not to install it at all:**
 
 ```
-pipx install magmacrunch
-magmacrunch
+uvx magmacrunch
 ```
 
-`pip install magmacrunch` works too, but only reaches your PATH if you are
-inside an activated virtualenv or used `pip install --user`. Run against a
-system Python it will install successfully and then appear to have done
-nothing, which is a confusing five minutes nobody needs.
+[uv](https://docs.astral.sh/uv/) pulls the arcade and its cabinets into a
+throwaway environment and starts them. Nothing lands on your PATH, nothing can
+collide with anything, and it behaves the same on macOS, Linux and Windows —
+every package in the stack is a pure-Python `py3-none-any` wheel, so there is
+nothing to compile on any of them. `pipx run magmacrunch` is the same trick if
+you already have pipx.
+
+To keep the command around afterwards:
+
+```
+uv tool install magmacrunch
+```
+
+`pipx install magmacrunch` does the same job. Either one puts `magmacrunch` —
+and each cabinet's own command — on your PATH inside an isolated virtualenv.
+
+| you want | run |
+|---|---|
+| to just play, right now | `uvx magmacrunch` |
+| the command, kept | `uv tool install magmacrunch` |
+| the command, and you have pipx | `pipx install magmacrunch` |
+| Homebrew to own it (macOS, Linux) | `brew install magmacrunchmedia/tap/magmacrunch` |
 
 That one install brings the arcade and all three cabinets.
+
+### If you reached for pip
+
+`pip install magmacrunch` is not wrong, but on its own it is the one route that
+regularly installs successfully and then appears to have done nothing. Three
+ways that happens, all of them recoverable:
+
+- **`error: externally-managed-environment`.** Homebrew and most current Python
+  builds refuse to install into the system Python. That is pip working
+  correctly, not a broken package. Use `uv`, `pipx`, or a virtualenv.
+- **It installed, but the command is not on your PATH.** `pip` only reaches
+  your PATH from an activated virtualenv or with `--user`. Run against a system
+  Python, the arcade is on disk and unreachable.
+- **You installed it from inside IPython or a notebook.** It went into whatever
+  environment that kernel runs on, which is usually not the one your shell
+  reaches.
+
+In all three the arcade is already installed, and this starts it, PATH or no
+PATH:
+
+```
+python3 -m magmacrunch
+```
+
+One more, because it costs people five minutes: `magmacrunch` is a **shell**
+command. Typing it at a `>>>` prompt is only ever a `NameError` — leave Python
+first.
 
 ## Playing
 
@@ -120,8 +162,8 @@ here; uninstalling makes it vanish; neither needs a release of the arcade.**
 
 Nothing in this package imports a game, so the arcade runs with none installed
 and tells you how to get one. The contract lives in
-[`texastoast.arcade`](https://pypi.org/project/texastoast/); the two cabinets
-above are worked examples of it.
+[`texastoast.arcade`](https://pypi.org/project/texastoast/); the three
+cabinets in the table below are worked examples of it.
 
 ## Cabinets
 
