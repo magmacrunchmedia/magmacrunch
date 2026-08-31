@@ -15,7 +15,7 @@ table is keyed on, rather than on the operating system:
 | `uv` | `uvx magmacrunch` | nothing lands on your PATH |
 | `pipx` | `pipx run magmacrunch` | the same trick |
 | Python 3.10+, and nothing else | `pip install magmacrunch` | the command, kept |
-| Homebrew (macOS, Linux) | `brew install magmacrunchmedia/tap/magmacrunch` | brew owns it |
+| Homebrew (macOS, Linux) | `brew install magmacrunch-media/tap/magmacrunch` | brew owns it |
 | none of these | install uv, below — it brings its own Python | |
 
 The first two run the arcade out of a throwaway environment: nothing reaches
@@ -216,7 +216,7 @@ here; uninstalling makes it vanish; neither needs a release of the arcade.**
 
 Nothing in this package imports a game, so the arcade runs with none installed
 and tells you how to get one. The contract lives in
-[`magmacrunch.engine.arcade`](https://github.com/magmacrunchmedia/magmacrunch);
+[`magmacrunch.engine.arcade`](https://github.com/magmacrunch-media/magmacrunch);
 the three
 cabinets in the table below are worked examples of it.
 
