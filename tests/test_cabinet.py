@@ -899,6 +899,40 @@ def test_a_blurb_full_of_glyphs_does_not_kill_the_listing(tmp_path):
     assert "Deck" in out.stdout
 
 
+def test_a_glyph_the_arcade_knows_degrades_to_something_that_means_it(tmp_path):
+    """The listing has two mechanisms and they are not redundant.
+
+    ``errors="replace"`` on stdout is the backstop: it keeps an unanticipated
+    emoji from killing the diagnostic, at the cost of printing ``?``. The
+    glyph table runs first and knows what the arcade's own characters *mean*,
+    so a blurb naming a suit says ``S`` rather than ``?`` — the difference
+    between a degraded listing and a redacted one.
+    """
+    import os
+    import subprocess
+    import sys
+
+    script = tmp_path / "known.py"
+    script.write_text(
+        "from magmacrunch.engine.arcade import GameInfo\n"
+        "from magmacrunch.__main__ import _print\n"
+        "class G:\n"
+        "    info = GameInfo(key='g', title='Dome',\n"
+        "                    blurb='beat the \\u2660 and chase the \\u2726')\n"
+        "_print([G()])\n",
+        encoding="utf-8",
+    )
+    out = subprocess.run(
+        [sys.executable, str(script)],
+        capture_output=True, text=True,
+        encoding="cp1252", errors="replace",
+        env={**os.environ, "PYTHONIOENCODING": "cp1252:strict", "PYTHONUTF8": "0"},
+    )
+    assert out.returncode == 0, out.stderr
+    assert "beat the S and chase the *" in out.stdout, out.stdout
+    assert "?" not in out.stdout, "the backstop fired where the table should have"
+
+
 # ── The no-import-edge rule ─────────────────────────────────────────
 
 

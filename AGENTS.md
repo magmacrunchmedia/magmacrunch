@@ -24,6 +24,48 @@ is the seam, and `texastoast.arcade` is a fossil of it. Both define
 `ENTRY_POINT_GROUP = "magmacrunch.games"`, and that string must stay identical
 in both or installed games stop being found.
 
+## Terminal capability: colour is inherited, characters are ours
+
+**Do not write colour degradation.** Textual reads `NO_COLOR` when the `App` is
+constructed and appends a `Monochrome` line filter; Rich steps truecolor down
+to 256 or 16 by looking at the terminal. Both reach this engine's own `Strip`,
+even though `GameSurface` overrides `render_line` and builds Rich `Style`s
+straight from hex without touching Textual's CSS — the filters are applied in
+`StylesCache.render_widget`, which takes `widget.render_line` and
+`widget.get_line_filters()` together. Nothing in this package mentions
+`NO_COLOR`, and that is correct.
+
+That inheritance is a fact about Textual's internals, so a version bump could
+drop it silently. `tests/engine/test_no_color.py` asserts on *rendered output*
+rather than on `app._filters` for exactly that reason — a filter that is
+installed and not applied is the bug being guarded against, and checking the
+list would pass straight through it. It carries a control test so it cannot
+pass by rendering nothing.
+
+**Characters are the half nothing under us owns**, and that is
+`magmacrunch.engine.ui.glyphs`. `TuiRenderer` substitutes on the way into the
+cell buffer — one place, rather than a question asked at thirty draw calls a
+frame across three games — and a renderer built without a `Glyphs` substitutes
+nothing, which is what keeps test expectations independent of whatever stream
+pytest attached.
+
+Two rules there are load-bearing and both were arrived at by measuring:
+
+- **Glyphs degrade by group, not one at a time.** cp1252 and cp437 both encode
+  `¬` and neither encodes `∧`, `∨` or `⊕`. Asked per glyph, George Boole's
+  board draws a real NOT sign beside `&`, `|` and `^` — one set of operators
+  in two alphabets, which is worse than either alphabet alone.
+- **Every substitute is exactly one cell.** Substitution happens *after* the
+  games have measured — a hint line trimmed to the window, a title centred in
+  a box, `bigtext.width` consulted before drawing. A stand-in of a different
+  width moves text off the layout computed for it, and only on the terminals
+  nobody developing this is looking at. `…` is therefore `.` and not `...`,
+  and `glyphs.py` asserts the rule at import.
+
+A new glyph drawn by any cabinet belongs in `GROUPS`, in the group a player
+reads it as part of. One that is not there goes through as mojibake — visibly,
+which is the intended failure.
+
 ## Tests: `tests/engine/` is the engine's, `tests/test_cabinet.py` is the launcher's
 
 The extraction brought the code across without its tests, leaving 24 modules

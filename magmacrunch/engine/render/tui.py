@@ -23,6 +23,11 @@ What a terminal cannot honestly do is drawn as follows:
   ``outline_width`` selects only *whether* a border is drawn, not how thick.
 * Anti-aliasing, sub-cell positioning and proportional fonts do not exist;
   coordinates are truncated to whole cells.
+* Characters the terminal cannot encode are substituted on the way in,
+  when the renderer was given a
+  :class:`~magmacrunch.engine.ui.glyphs.Glyphs`. See
+  :meth:`TuiRenderer.use_glyphs`. This is the one place it happens, so
+  a game does not repeat the question at thirty draw calls a frame.
 """
 
 from __future__ import annotations
@@ -33,6 +38,7 @@ from typing import Any
 
 from magmacrunch.engine.render.camera import Camera
 from magmacrunch.engine.render.cellbuffer import EMPTY_CHAR, KEEP_BG, CellBuffer
+from magmacrunch.engine.ui.glyphs import GROUPS, Glyphs
 
 logger = logging.getLogger(__name__)
 
@@ -64,8 +70,11 @@ class TuiRenderer:
     """
 
     def __init__(self, width: int, height: int, surface: Any | None = None,
-                 buffer: CellBuffer | None = None):
+                 buffer: CellBuffer | None = None,
+                 glyphs: Glyphs | None = None):
         self._buffer = buffer if buffer is not None else CellBuffer(width, height)
+        self._plain: dict[int, str] | None = None
+        self.use_glyphs(glyphs)
         self._surface = surface if surface is not None else _NullSurface()
         self._camera = Camera(width, height)
         #: Per-tile glyphs for ``draw_tilemap``. Not part of the Renderer
@@ -77,6 +86,37 @@ class TuiRenderer:
         self._warned_about_images = False
 
     # ── Wiring ──────────────────────────────────────────────────────
+
+    def use_glyphs(self, glyphs: Glyphs | None) -> None:
+        """Substitute characters this terminal cannot encode, from now on.
+
+        ``None`` -- the default -- draws every string exactly as it was
+        given, which is what a renderer built in a test wants: a suite
+        whose expected output depended on the encoding of whatever stream
+        pytest happened to attach would fail on one machine and pass on
+        another, for reasons nothing in the test says.
+
+        A terminal that can encode everything also stores ``None`` here
+        rather than an identity table, so the common case costs one
+        ``is None`` per draw call instead of a translate over every
+        string drawn.
+        """
+        if glyphs is None:
+            self._plain = None
+            return
+        table = glyphs.resolve(*GROUPS)
+        changed = {fancy: plain for fancy, plain in table.items()
+                   if fancy != plain}
+        self._plain = str.maketrans(changed) if changed else None
+
+    def _downgrade(self, text: str) -> str:
+        """``text`` in characters this terminal can write.
+
+        Length-preserving, which the fallback table guarantees and
+        :mod:`~magmacrunch.engine.ui.glyphs` asserts at import. Every
+        caller has already measured by the time it gets here.
+        """
+        return text if self._plain is None else text.translate(self._plain)
 
     @property
     def buffer(self) -> CellBuffer:
@@ -147,7 +187,8 @@ class TuiRenderer:
                 color = tile_colors.get(tile_id)
                 if color is None:
                     continue
-                glyph = self.tile_glyphs.get(tile_id, self.default_tile_glyph)
+                glyph = self._downgrade(
+                    self.tile_glyphs.get(tile_id, self.default_tile_glyph))
                 # A block glyph reads as a solid tile whether the terminal
                 # honors foreground or background, so paint both.
                 self._buffer.set_cell(col - start_col, row - start_row,
@@ -193,7 +234,7 @@ class TuiRenderer:
         # background and cut a hole through the tile the text sits on.
         bg = kwargs["bg"] if "bg" in kwargs else KEEP_BG
         anchor = kwargs.get("anchor", "nw")
-        text = str(text)
+        text = self._downgrade(str(text))
         ax, ay = self._anchor_offset(anchor, text)
         self._buffer.write(int(x) + ax, int(y) + ay, text, fg=fill, bg=bg)
 
@@ -260,7 +301,7 @@ class TuiRenderer:
         in cells rather than pixels.
         """
         previous = self._enter_group(group)
-        rendered = self._wrap(str(text), width)
+        rendered = self._downgrade(self._wrap(str(text), width))
         ax, ay = self._anchor_offset(anchor, rendered)
         self._buffer.write(int(x) + ax, int(y) + ay, rendered, fg=fill or DEFAULT_FG)
         self._exit_group(previous)

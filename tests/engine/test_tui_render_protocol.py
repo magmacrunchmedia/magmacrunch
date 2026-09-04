@@ -11,6 +11,7 @@ import pytest
 from magmacrunch.engine.render.abstract import Renderer, UISurface, as_ui_surface
 from magmacrunch.engine.render.cellbuffer import CellBuffer
 from magmacrunch.engine.render.tui import FULL_BLOCK, TuiRenderer
+from magmacrunch.engine.ui.glyphs import Glyphs
 
 
 def _has_textual() -> bool:
@@ -437,3 +438,93 @@ def test_an_explicit_size_still_wins_over_the_surface():
     menu.render()
     after = next(ln for ln in renderer.to_text().split("\n") if ">" in ln).index(">")
     assert before == after
+
+
+# ── Glyph substitution ────────────────────────────────────────────
+#
+# The one place a character the terminal cannot encode is replaced. It happens
+# here rather than in the games because there are three of them, each drawing
+# thirty times a frame, and a question asked at every draw site is a question
+# that will be forgotten at one of them.
+
+
+def test_a_renderer_with_no_glyphs_draws_exactly_what_it_was_given():
+    """The default, and what every test in this suite depends on. A renderer
+    that consulted the ambient encoding would make expected output depend on
+    whatever stream pytest attached."""
+    r = TuiRenderer(20, 3)
+    r.ui_text(0, 0, "█↑∧", fill="#fff")
+    assert r.buffer.to_text().startswith("█↑∧")
+
+
+def test_a_terminal_without_the_glyphs_gets_the_plain_forms():
+    r = TuiRenderer(20, 3, glyphs=Glyphs(encoding="ascii"))
+    r.ui_text(0, 0, "█↑∧", fill="#fff")
+    assert r.buffer.to_text().startswith("#^&")
+
+
+def test_substitution_does_not_move_the_text():
+    """The property the one-cell rule buys, checked where it matters: the
+    caller centred this before the renderer had an opinion."""
+    plain = TuiRenderer(21, 3, glyphs=Glyphs(encoding="ascii"))
+    rich = TuiRenderer(21, 3)
+    for r in (plain, rich):
+        r.ui_text(10, 1, "←…→", fill="#fff", anchor="n")
+    a, b = plain.buffer.to_text().split("\n"), rich.buffer.to_text().split("\n")
+    assert [len(row) for row in a] == [len(row) for row in b]
+    assert a[1].index("<") == b[1].index("←")
+
+
+def test_the_camera_path_is_substituted_too():
+    """``draw_text`` and ``ui_text`` are separate entry points, and a game that
+    drew through the world-space one would otherwise be missed."""
+    r = TuiRenderer(20, 3, glyphs=Glyphs(encoding="ascii"))
+    r.draw_text(0, 0, "██", fill="#fff")
+    assert r.buffer.to_text().startswith("##")
+
+
+def test_use_glyphs_can_be_changed_after_construction():
+    r = TuiRenderer(20, 3)
+    r.use_glyphs(Glyphs(encoding="ascii"))
+    r.ui_text(0, 0, "█", fill="#fff")
+    assert r.buffer.to_text().startswith("#")
+    r.use_glyphs(None)
+    r.clear()
+    r.ui_text(0, 0, "█", fill="#fff")
+    assert r.buffer.to_text().startswith("█")
+
+
+def test_a_capable_terminal_costs_nothing_to_have_asked():
+    """A UTF-8 terminal stores no table at all, rather than an identity one, so
+    the common case is an ``is None`` and not a translate over every string."""
+    assert TuiRenderer(4, 1, glyphs=Glyphs(encoding="utf-8"))._plain is None
+    assert TuiRenderer(4, 1, glyphs=Glyphs(encoding="ascii"))._plain is not None
+
+
+def test_a_group_the_terminal_half_supports_still_goes_down_together():
+    """The motivating case, end to end through the renderer.
+
+    cp1252 encodes the NOT sign and none of the other three operators. Asked
+    one glyph at a time, George Boole's gate list would come back as a real
+    ``¬`` beside ``&``, ``|`` and ``^`` -- one set of operators in two
+    alphabets, which is harder to read than either alphabet alone.
+    """
+    r = TuiRenderer(20, 3, glyphs=Glyphs(encoding="cp1252"))
+    r.ui_text(0, 0, "¬∧∨⊕", fill="#fff")
+    assert r.buffer.to_text().startswith("!&|^")
+
+
+def test_a_group_the_terminal_fully_supports_is_left_alone():
+    """The other half of the same rule. cp1252 has all three punctuation
+    glyphs, so it keeps all three -- the group only degrades when it has to."""
+    r = TuiRenderer(20, 3, glyphs=Glyphs(encoding="cp1252"))
+    r.ui_text(0, 0, "·…—", fill="#fff")
+    assert r.buffer.to_text().startswith("·…—")
+
+
+def test_cp437_takes_the_middle_dot_down_with_the_ellipsis():
+    """And the same split again on the codepage where it falls inside
+    punctuation rather than inside logic. cp437 has ``·`` and not ``…``."""
+    r = TuiRenderer(20, 3, glyphs=Glyphs(encoding="cp437"))
+    r.ui_text(0, 0, "·…", fill="#fff")
+    assert r.buffer.to_text().startswith("..")

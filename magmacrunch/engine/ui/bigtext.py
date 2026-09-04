@@ -28,9 +28,21 @@ that renders BOOLE as DOOLE is worse than one in plain capitals.
 
 Unsupported characters render as a blank cell rather than raising. A title is
 decoration, and decoration should not be able to take a game down.
+
+**The block elements are themselves an assumption**, and the one place this
+module is not font-independent after all: a console that cannot encode ``█``
+would draw the title as mojibake. That is handled a layer down --
+:class:`~magmacrunch.engine.render.tui.TuiRenderer` substitutes on the way
+into the buffer, setting the same letterforms in ``#``, ``"`` and ``_``,
+each of which occupies the half of the cell its block does. This module
+therefore stays a pure function of its input, and :func:`width` keeps being
+true of what actually lands on screen, because every substitute is one cell.
+:data:`INK` is where the two facts are tied together.
 """
 
 from __future__ import annotations
+
+from magmacrunch.engine.ui.glyphs import GROUPS
 
 #: Columns of ink per glyph, before the gutter.
 GLYPH_W = 4
@@ -95,6 +107,24 @@ _FONT: dict[str, tuple[str, str, str]] = {
 #: a stray character leaves a gap instead of a smear.
 _MISSING = ("    ", "    ", "    ")
 
+#: The three characters the face is drawn with.
+#:
+#: The stand-ins are not chosen here, and not applied here either. They come
+#: from the ``blocks`` group of
+#: :data:`~magmacrunch.engine.ui.glyphs.GROUPS`, which is decided as a unit --
+#: so a terminal cannot end up setting the title in blocks while the game
+#: behind it draws its walls in ``#``.
+INK = ("█", "▀", "▄")
+
+# Every stand-in for those is exactly one cell wide, which is what lets
+# :func:`width` stay true of the plain face as well: a two-character
+# substitute would silently widen every title past the box measured for it.
+# Asserted rather than assumed because the table lives in another module and
+# an editor there cannot see what depends on it.
+assert all(len(GROUPS["blocks"][char]) == 1 for char in INK), (
+    "the block face must stay fixed-width"
+)
+
 
 def supports(char: str) -> bool:
     """Whether ``char`` has a glyph. Case-insensitive; the face is capitals."""
@@ -140,10 +170,10 @@ def lines(text: str) -> list[str]:
     total = width(text)
     out: list[str] = []
     for row_text in text.split("\n"):
-        glyphs = [_FONT.get(char.upper(), _MISSING) for char in row_text]
+        chars = [_FONT.get(char.upper(), _MISSING) for char in row_text]
         pad = (total - _row_width(row_text)) // 2
         for row in range(GLYPH_H):
-            drawn = " ".join(glyph[row] for glyph in glyphs)
+            drawn = " ".join(glyph[row] for glyph in chars)
             out.append((" " * pad + drawn).ljust(total))
     return out
 
@@ -163,5 +193,5 @@ def fits(text: str, cols: int, rows: int = GLYPH_H) -> bool:
     return width(text) <= cols and height(text) <= rows
 
 
-__all__ = ["ADVANCE", "GLYPH_H", "GLYPH_W", "block", "fits", "height", "lines",
-           "supports", "width"]
+__all__ = ["ADVANCE", "GLYPH_H", "GLYPH_W", "INK", "block", "fits", "height",
+           "lines", "supports", "width"]

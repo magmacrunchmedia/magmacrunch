@@ -240,7 +240,31 @@ game's, so getting to the floor is never the thing that fails.
 Two cards sit side by side from 70 columns and stack into one below that. More
 cabinets than fit are paged, not scrolled.
 
-Truecolor helps but is not required.
+Truecolor helps but is not required. `NO_COLOR` is honoured — Textual applies a
+monochrome filter and the arcade inherits it, which the palettes survive:
+nothing in any cabinet is readable in colour and unreadable without it.
+
+### Characters it cannot draw
+
+Colour degrades on its own; characters do not. Windows' two common codepages
+are where that shows — cp1252 has none of the block elements, arrows or suits,
+and cp437 has the blocks and none of the arrows, stars or suits. So the engine
+asks the terminal what it can encode and substitutes what it cannot, one
+**group** of related glyphs at a time, so a set never comes back half
+translated and a terminal that can draw the blocks keeps them.
+
+Detection is automatic and applies to every cabinet the arcade seats. Override
+it for the case no probe can see — an encoding that accepts the character in a
+font with no picture for it:
+
+```
+magmacrunch --ascii       this session
+MAGMACRUNCH_ASCII=1       always, and every cabinet run on its own too
+```
+
+Every substitute is exactly one cell wide, so a plain screen has the same
+layout as a fancy one rather than a reflowed approximation of it. See
+`magmacrunch.engine.ui.glyphs`.
 
 ## Licence
 

@@ -37,6 +37,14 @@ def main() -> None:
     parser.add_argument(
         "--version", action="version", version=f"magmacrunch {__version__}",
     )
+    parser.add_argument(
+        "--ascii", action="store_true", dest="ascii_only",
+        help="draw with plain ASCII instead of block, arrow and suit "
+             "glyphs. Detected automatically from the terminal's "
+             "encoding; this forces it, for a font that lacks the "
+             "pictures. MAGMACRUNCH_ASCII=1 says the same for every "
+             "cabinet at once.",
+    )
     args = parser.parse_args()
 
     # Imported here, not at module scope, so --help works without the engine
@@ -51,9 +59,14 @@ def main() -> None:
 
     from magmacrunch.app import ARCADE_INFO, ArcadeApp
     from magmacrunch.engine.core.tui_host import TuiHost
+    from magmacrunch.engine.ui.glyphs import Glyphs
 
+    # Set on the host, so every cabinet `seat()` puts on this terminal
+    # inherits it. A game seated by the arcade never runs its own run(),
+    # so this is the only place the question is asked for it.
     host = TuiHost(title=ARCADE_INFO.title, fps=ARCADE_INFO.fps,
-                   hold_ms=ARCADE_INFO.hold_ms)
+                   hold_ms=ARCADE_INFO.hold_ms,
+                   glyphs=Glyphs.detect(ascii_only=args.ascii_only))
     host.push_scene(ArcadeApp(host, games).root_scene)
     host.run()
 
@@ -66,31 +79,46 @@ def _print(games: list) -> None:
     file on a legacy Windows codepage that is a ``UnicodeEncodeError``, and a
     diagnostic that dies on the thing it is diagnosing is worse than useless.
     Degrade the characters instead.
+
+    Two mechanisms, and they are not redundant. The glyph table knows what the
+    arcade's own characters *mean* and turns an em dash into ``-``; stdout's
+    ``errors="replace"`` is the backstop for everything else, and turns an
+    emoji nobody anticipated into ``?``. Without the first, a blurb on cp1252
+    read ``logic gates ? merge``, which is the diagnostic damaging the thing it
+    is reporting on. Without the second, a game author could still crash this
+    by picking a character the table has never heard of.
     """
+    from magmacrunch.engine.ui.glyphs import GROUPS, Glyphs
+
     _degrade_gracefully()
+    glyphs = Glyphs.detect()
+    table = glyphs.resolve(*GROUPS)
+
+    def say(text: str = "") -> None:
+        print(glyphs.translate(text, table))
 
     if not games:
         from magmacrunch.cabinets import PACKAGES
 
-        print("No cabinets installed.")
-        print()
+        say("No cabinets installed.")
+        say()
         for name in PACKAGES:
-            print(f"  pip install {name}")
-        print()
-        print("Any package declaring a magmacrunch.games entry point appears")
-        print("here. Nothing above this line is a hardcoded list.")
+            say(f"  pip install {name}")
+        say()
+        say("Any package declaring a magmacrunch.games entry point appears")
+        say("here. Nothing above this line is a hardcoded list.")
         return
 
-    print(f"{len(games)} cabinet{'s' if len(games) != 1 else ''} installed:")
-    print()
+    say(f"{len(games)} cabinet{'s' if len(games) != 1 else ''} installed:")
+    say()
     for game in games:
         info = game.info
-        print(f"  {info.key}")
-        print(f"    {info.title}")
-        print(f"    {info.blurb}")
-        print(f"    wants {info.min_cols}x{info.min_rows}, "
-              f"{info.fps} fps, hold {info.hold_ms} ms")
-        print()
+        say(f"  {info.key}")
+        say(f"    {info.title}")
+        say(f"    {info.blurb}")
+        say(f"    wants {info.min_cols}x{info.min_rows}, "
+            f"{info.fps} fps, hold {info.hold_ms} ms")
+        say()
 
 
 def _degrade_gracefully() -> None:

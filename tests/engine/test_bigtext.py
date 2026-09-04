@@ -12,6 +12,7 @@ width it gets.
 import pytest
 
 from magmacrunch.engine.ui import bigtext
+from magmacrunch.engine.ui.glyphs import GROUPS, Glyphs
 
 ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 DIGITS = "0123456789"
@@ -168,3 +169,73 @@ def test_the_two_line_name_fits_a_terminal_where_one_line_would_not():
     """This is the whole reason line breaks exist here."""
     assert bigtext.width("TEXAS HOLD'EM LAVA DOME") > 100
     assert bigtext.width("TEXAS HOLD'EM\nLAVA DOME") <= 78
+
+
+# ── The plain face ───────────────────────────────────────────────────
+#
+# The module claims to be font-independent because block elements fill their
+# cell in any monospace font. That is true of the *shape* and says nothing
+# about the *encoding*: a console that cannot write █ would draw the title as
+# mojibake.
+#
+# The substitution itself is TuiRenderer's, applied on the way into the cell
+# buffer. What these check is that the face *survives* it, which is a property
+# of the letterforms and of the table, and so belongs here beside them.
+
+
+def _plain(text):
+    """What the renderer puts in the buffer on a terminal with no blocks."""
+    g = Glyphs(encoding="cp1252")
+    return g.translate(bigtext.block(text), g.resolve("blocks"))
+
+
+def test_the_face_goes_to_ascii_and_nothing_else():
+    out = _plain("BOOLE")
+    assert out.isascii()
+    assert set(out) <= set('#"_ \n'), out
+
+
+def test_cp437_keeps_the_blocks_because_it_has_them():
+    """The reason substitution is asked per group rather than per program."""
+    g = Glyphs(encoding="cp437")
+    assert "█" in g.translate(bigtext.block("BOOLE"), g.resolve("blocks"))
+
+
+def test_the_plain_face_measures_the_same_as_the_block_one():
+    """:func:`width` is computed rather than measured, and a caller lays a
+    title out before rendering it. The renderer substitutes *after* that, so a
+    stand-in of a different width would move every title off its own layout."""
+    for text in ("BOOLE", "MOONLIGHT\nDRIFT", "TEXAS HOLD'EM\nLAVA DOME"):
+        rows = _plain(text).split("\n")
+        assert len(rows) == bigtext.height(text)
+        assert max(len(row) for row in rows) == bigtext.width(text)
+        assert [len(r) for r in rows] == [len(r) for r in bigtext.lines(text)]
+
+
+def test_the_plain_face_still_tells_the_letters_apart():
+    """Three rows exist so BOOLE does not render as DOOLE. Substituting the
+    ink must not undo that -- it would, if two blocks mapped to one character."""
+    seen: dict[str, str] = {}
+    for char in ALPHABET + DIGITS:
+        drawn = _plain(char)
+        assert drawn not in seen, f"{char} and {seen[drawn]} draw identically"
+        seen[drawn] = char
+
+
+def test_the_ink_this_face_uses_is_all_in_the_blocks_group():
+    """A letterform that grew a fourth character would be one the renderer had
+    no substitute for, and that glyph alone would go through as mojibake."""
+    used = {c for glyph in bigtext._FONT.values() for row in glyph for c in row}
+    assert used - {" "} == set(bigtext.INK)
+    assert set(bigtext.INK) <= set(GROUPS["blocks"])
+
+
+def test_render_the_plain_face(capsys):
+    """The other half of `test_render_the_whole_face`. Run with -s to look at
+    it -- a substitution that measures correctly and still reads as noise is a
+    failure no assertion here would catch."""
+    with capsys.disabled():
+        print()
+        for row in ALPHABET, DIGITS:
+            print(_plain(row))
+            print()

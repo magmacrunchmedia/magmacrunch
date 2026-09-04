@@ -327,6 +327,7 @@ class TuiGame:
         scheduler: Any | None = None,
         input_source: TuiInput | None = None,
         max_consecutive_errors: int = 10,
+        glyphs: Any | None = None,
     ):
         self.config = config or Config(title=title, width=width, height=height, fps=fps)
         self._auto_size = auto_size
@@ -334,8 +335,11 @@ class TuiGame:
 
         self._buffer = CellBuffer(width, height)
         self._surface = surface if surface is not None else GameSurface(self._buffer)
+        # Reaches here from a game's own ``run()`` through TuiHost's
+        # ``**game_kwargs``, so a cabinet wires its --ascii flag up
+        # without either intermediate class growing a parameter for it.
         self._renderer = TuiRenderer(width, height, surface=self._surface,
-                                     buffer=self._buffer)
+                                     buffer=self._buffer, glyphs=glyphs)
         self.input = input_source if input_source is not None else TuiInput()
 
         self._injected_scheduler = scheduler
