@@ -1213,3 +1213,44 @@ def test_the_number_never_pushes_enter_off_the_card(isolated_scores):
     assert cards.best_label(1200) == "BEST 1,200"
     # Seven figures still fit a 32-column card beside the ENTER line.
     assert len(theme.PLAY) + 1 + len(cards.best_label(9_999_999)) <= theme.CARD_INNER
+
+
+def test_the_arcade_floor_is_drawable_on_a_terminal_with_no_unicode():
+    """The launcher's own chrome, not a cabinet's.
+
+    Every cabinet was checked for this and the floor they stand on was not, so
+    the cards drew box corners with no stand-in. This renders the real scene
+    through a real host and reads the buffer back.
+    """
+    import asyncio
+
+    from magmacrunch.app import ARCADE_INFO, ArcadeApp
+    from magmacrunch.engine.core.tui_game import _GameApp
+    from magmacrunch.engine.core.tui_host import TuiHost
+    from magmacrunch.engine.ui.glyphs import Glyphs
+
+    async def go() -> str:
+        host = TuiHost(title=ARCADE_INFO.title, fps=ARCADE_INFO.fps,
+                       hold_ms=ARCADE_INFO.hold_ms,
+                       glyphs=Glyphs(encoding="ascii"))
+        host.push_scene(ArcadeApp(host, [
+            FakeGame(key="alpha", title="Alpha Cabinet", blurb="The first one."),
+            FakeGame(key="beta", title="Beta Cabinet", blurb="The second one."),
+        ]).root_scene)
+        host.stack.update(0.0)
+        app = _GameApp(host.game, host.game.surface)
+        host.game._app = app
+        async with app.run_test(size=(78, 24)):
+            await asyncio.sleep(0.35)
+            text = host.game.surface.buffer.to_text()
+            app.exit()
+        host.quit()
+        return text
+
+    drawn = asyncio.run(go())
+    leaked = sorted({c for c in drawn if ord(c) > 126})
+    assert not leaked, (
+        "the arcade drew these on an ASCII terminal: "
+        + ", ".join(f"U+{ord(c):04X} {c!r}" for c in leaked)
+    )
+    assert "Alpha Cabinet" in drawn, "nothing rendered, so this proves nothing"

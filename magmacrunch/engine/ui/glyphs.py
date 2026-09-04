@@ -71,7 +71,29 @@ GROUPS: dict[str, dict[str, str]] = {
         "░": ":",   # LIGHT SHADE
         "▀": '"',   # UPPER HALF BLOCK
         "▄": "_",   # LOWER HALF BLOCK
-        "─": "-",   # BOX DRAWINGS LIGHT HORIZONTAL
+    },
+    # Box drawing is one frame and degrades as one. Splitting it is how a
+    # card ends up with ASCII sides and unicode corners -- which is what
+    # 0.7.0 shipped, because `─` was in `blocks` (a game drew it as a
+    # ground line) and the other five were in no group at all. The split
+    # is not hypothetical either way round: cp437 is the DOS box-drawing
+    # codepage and has every one of these, cp1252 has none of them.
+    #
+    # The junctions are here without being drawn yet. Normally that would
+    # be speculative, but a frame that grows a divider and silently keeps
+    # one unicode character is the exact bug this group exists to close.
+    "box": {
+        "─": "-",   # LIGHT HORIZONTAL
+        "│": "|",   # LIGHT VERTICAL
+        "┌": "+",   # LIGHT DOWN AND RIGHT
+        "┐": "+",   # LIGHT DOWN AND LEFT
+        "└": "+",   # LIGHT UP AND RIGHT
+        "┘": "+",   # LIGHT UP AND LEFT
+        "├": "+",   # LIGHT VERTICAL AND RIGHT
+        "┤": "+",   # LIGHT VERTICAL AND LEFT
+        "┬": "+",   # LIGHT DOWN AND HORIZONTAL
+        "┴": "+",   # LIGHT UP AND HORIZONTAL
+        "┼": "+",   # LIGHT VERTICAL AND HORIZONTAL
     },
     # Hint lines. Spelled as the keycap rather than as a picture: "^" for up
     # is a convention a terminal user already reads. Grouped because "↑v" —
@@ -84,6 +106,8 @@ GROUPS: dict[str, dict[str, str]] = {
         "↓": "v",
         "▲": "^",   # BLACK UP-POINTING TRIANGLE
         "▼": "v",   # BLACK DOWN-POINTING TRIANGLE
+        "▶": ">",   # BLACK RIGHT-POINTING TRIANGLE, the arcade's
+        "◀": "<",   # ENTER marker and its mirror
     },
     # The ellipsis is load-bearing: it is what marks a hint line as having
     # been cut, so losing it silently loses the only signal that anything was
@@ -95,6 +119,9 @@ GROUPS: dict[str, dict[str, str]] = {
         "…": ".",
         "—": "-",
         "·": ".",
+        # One cell, so a bare `c`. `(c)` is three and the footer it sits
+        # in is centred, so the line would move.
+        "©": "c",
     },
     "stars": {
         "✦": "*",   # BLACK FOUR POINTED STAR, Moonlight Drift's sky

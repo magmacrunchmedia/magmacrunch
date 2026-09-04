@@ -260,3 +260,72 @@ def test_the_suits_agree_with_lava_domes_own_ascii_mode(fancy, plain):
     """That game had a ``--ascii`` before this module existed. Two routes to a
     plain card that disagreed on the letter would be worse than one."""
     assert GROUPS["suits"][fancy] == plain
+
+
+# ── Nothing draws a glyph the table has never heard of ──────────────
+
+
+def _drawn_literals(path):
+    """Every string literal in ``path`` that is not a docstring.
+
+    Comments fall out for free -- they are not literals -- and docstrings are
+    excluded because prose about a glyph is not a glyph being drawn. What is
+    left is what could reach a terminal.
+    """
+    import ast
+
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    docs = set()
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef,
+                             ast.AsyncFunctionDef)):
+            doc = ast.get_docstring(node, clean=False)
+            if doc:
+                docs.add(doc)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+            if node.value not in docs:
+                yield node.value
+
+
+def test_every_glyph_this_package_draws_has_a_fallback():
+    """The guard that would have caught the arcade's own chrome.
+
+    :data:`FALLBACKS` was built by inventorying the three cabinets, and the
+    launcher was not one of them -- so ``cards.py`` drew ``\u2502\u250c\u2510\u2514\u2518`` and
+    ``theme.py`` drew ``\u25b6`` and ``\u00a9``, none of which had a stand-in. cp1252
+    encodes none of the box set, so the cabinet cards were mojibake on the
+    console this whole feature exists for.
+
+    Being told which module and which character beats rediscovering it by
+    running the program on a codepage nobody develops on.
+    """
+    import pathlib
+
+    package = pathlib.Path(__file__).resolve().parent.parent.parent / "magmacrunch"
+    missing: dict[str, set[str]] = {}
+    for path in sorted(package.rglob("*.py")):
+        for literal in _drawn_literals(path):
+            for char in literal:
+                if ord(char) > 126 and char not in FALLBACKS:
+                    name = str(path.relative_to(package)).replace("\\", "/")
+                    missing.setdefault(char, set()).add(name)
+
+    assert not missing, "glyphs drawn with no fallback: " + ", ".join(
+        f"U+{ord(c):04X} in {sorted(w)}" for c, w in sorted(missing.items())
+    )
+
+
+def test_the_box_set_degrades_as_one_frame():
+    """cp437 is the DOS box-drawing codepage and has all of these; cp1252 has
+    none. A card with ASCII sides and unicode corners is what splitting them
+    across groups produced, and it is what this prevents."""
+    assert CP437.resolve("box") == {c: c for c in GROUPS["box"]}
+    assert CP1252.resolve("box") == GROUPS["box"]
+
+
+def test_the_horizontal_rule_lives_with_the_rest_of_the_box():
+    """It used to sit in ``blocks`` because a game drew it as a ground line,
+    which is how it came to be the only border character with a stand-in."""
+    assert "\u2500" in GROUPS["box"]
+    assert "\u2500" not in GROUPS["blocks"]
